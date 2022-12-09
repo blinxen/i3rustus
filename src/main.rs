@@ -11,8 +11,8 @@ use widgets::battery_life::Battery;
 use widgets::cpu_stats::CpuUsage;
 use widgets::cpu_stats::CpuUsageType;
 use widgets::disk_stats::Disk;
-use widgets::internet_connection::InternetInformation;
-use widgets::internet_connection::InternetType;
+use widgets::network_information::NetworkInformation;
+use widgets::network_information::NetworkType;
 use widgets::memory_stats::MemoryUsage;
 use widgets::time::Time;
 use widgets::Widget;
@@ -88,8 +88,8 @@ fn main() {
     let final_config = I3Config {
         version: 1,
         widgets: vec![
-            Box::new(InternetInformation::new(InternetType::Wlan)),
-            Box::new(InternetInformation::new(InternetType::Ethernet)),
+            Box::new(NetworkInformation::new(NetworkType::Wlan)),
+            Box::new(NetworkInformation::new(NetworkType::Ethernet)),
             Box::new(Battery::new()),
             Box::new(CpuUsage::new(CpuUsageType::CpuLoad)),
             Box::new(CpuUsage::new(CpuUsageType::Percentage)),

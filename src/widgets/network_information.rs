@@ -2,19 +2,19 @@ use crate::widgets::Widget;
 use crate::widgets::WidgetError;
 use std::process::Command;
 
-pub enum InternetType {
+pub enum NetworkType {
     Ethernet,
     Wlan,
 }
 
-pub struct InternetInformation {
-    internet_type: InternetType,
+pub struct NetworkInformation {
+    network_type: NetworkType,
 }
 
-impl InternetInformation {
-    pub fn new(internet_type: InternetType) -> Self {
-        InternetInformation {
-            internet_type: internet_type,
+impl NetworkInformation {
+    pub fn new(network_type: NetworkType) -> Self {
+        NetworkInformation {
+            network_type: network_type,
         }
     }
 
@@ -23,6 +23,7 @@ impl InternetInformation {
     }
 
     fn get_wlan_information(&self) -> Result<String, WidgetError> {
+        // Information can also be found under /sys/class/net/<DEV>/uevent
         let wlan_devices_list = String::from_utf8(Command::new("iw").arg("dev").output()?.stdout)?;
         // Look for the index of the "Interface" substring
         let wlan_device_name_index = wlan_devices_list.find("Interface ").unwrap();
@@ -56,15 +57,15 @@ impl InternetInformation {
     }
 }
 
-impl Widget for InternetInformation {
+impl Widget for NetworkInformation {
     fn name(&self) -> &str {
-        "internet"
+        "network"
     }
 
     fn display_text(&self) -> Result<String, WidgetError> {
-        match self.internet_type {
-            InternetType::Ethernet => self.get_ethernet_information(),
-            InternetType::Wlan => self.get_wlan_information(),
+        match self.network_type {
+            NetworkType::Ethernet => self.get_ethernet_information(),
+            NetworkType::Wlan => self.get_wlan_information(),
         }
     }
 }

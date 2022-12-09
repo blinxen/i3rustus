@@ -17,7 +17,7 @@ pub trait Widget {
         // full_text is defined by i3 and is the display_text
         // Name is not defined by i3 and is only used to know which
         // config belongs to which widget
-        let mut full_text = String::new();
+        let full_text: String;
 
         match self.display_text() {
             Ok(text) => full_text = text,

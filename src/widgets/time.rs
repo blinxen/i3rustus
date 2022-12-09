@@ -1,4 +1,4 @@
-use chrono::Utc;
+use chrono::Local;
 use chrono::DateTime;
 
 use crate::widgets::Widget;
@@ -21,7 +21,7 @@ impl Widget for Time {
     }
 
     fn display_text(&self) -> Result<String, WidgetError> {
-        let current_time: DateTime<Utc> = Utc::now();
+        let current_time: DateTime<Local> = Local::now();
         Ok(format!("{}", current_time.format("%d.%m.%Y %H:%M:%S")))
     }
 

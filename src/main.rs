@@ -6,6 +6,7 @@ use serde_json::{ Value, json };
 
 use utils::json::jsonify;
 use utils::logger::Logger;
+use widgets::battery_life::Battery;
 use widgets::time::Time;
 use widgets::disk_stats::Disk;
 use widgets::{ Widget };
@@ -85,6 +86,7 @@ fn main() {
     let final_config = I3Config {
         version: 1,
         widgets: vec![
+            Box::new(Battery::new()),
             Box::new(CpuUsage::new(CpuUsageType::CpuLoad)),
             Box::new(CpuUsage::new(CpuUsageType::Percentage)),
             Box::new(MemoryUsage {}),

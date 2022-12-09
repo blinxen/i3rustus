@@ -1,6 +1,7 @@
 use std::error::Error;
 use std::fmt;
 use std::io::Error as IO_Error;
+use std::string::FromUtf8Error;
 
 pub mod battery_life;
 pub mod cpu_stats;
@@ -62,6 +63,12 @@ impl Error for WidgetError {}
 
 impl From<IO_Error> for WidgetError {
     fn from(item: IO_Error) -> Self {
+        WidgetError::new(item.to_string())
+    }
+}
+
+impl From<FromUtf8Error> for WidgetError {
+    fn from(item: FromUtf8Error) -> Self {
         WidgetError::new(item.to_string())
     }
 }

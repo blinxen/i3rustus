@@ -45,7 +45,16 @@ impl CpuUsage {
     }
 
     fn get_cpu_load(&self) -> Result<String, WidgetError> {
-        Ok("load".to_string())
+        let mut load_line = String::new();
+        // unwrap is OK to use here, because /proc/loadavg should always exist
+        // if it doesn't then something is wrong with our OS
+        let load_avg = read_file("/proc/loadavg").unwrap();
+        BufReader::new(load_avg).read_line(&mut load_line);
+        // We only want the the load and not the
+        let load = &load_line.split_whitespace().collect::<Vec<&str>>()[0..3];
+        Ok(
+            format!("Load: {}", load.join(" "))
+        )
     }
 
     fn get_cpu_usage(&self) -> Result<String, WidgetError> {
@@ -58,7 +67,7 @@ impl CpuUsage {
         // if it doesn't then something is wrong with our OS
         let proc_stats = read_file("/proc/stat").unwrap();
         // Use unwrap to suppress unsed Result warning
-        BufReader::new(proc_stats).read_line(&mut cpu_line).unwrap();
+        BufReader::new(proc_stats).read_line(&mut cpu_line);
         let (_, cpu_stats) = cpu_line.split_once("  ").unwrap();
 
         for (i, number) in cpu_stats.trim().split(" ").enumerate() {

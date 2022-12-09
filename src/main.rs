@@ -80,6 +80,8 @@ fn main() {
         _ => {}
     }
 
+    // Run each Widget in its own thread
+    // or at least make them async
     let final_config = I3Config {
         version: 1,
         widgets: vec![

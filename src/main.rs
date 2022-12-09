@@ -37,7 +37,7 @@ impl I3Config {
                 Ok(conf) => widget_config = conf,
                 Err(error) => {
                     LOGGER.warning(
-                        format!(
+                        &format!(
                             "Invalid config for {}: \n\tTried to convert `{}` to JSON\n\t{}",
                             widget.name(),
                             widget.to_json(),

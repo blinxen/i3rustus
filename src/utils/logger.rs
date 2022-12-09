@@ -21,7 +21,7 @@ impl Log for Logger<'_> {
 
 impl Logger<'_> {
 
-    pub fn info(&self, log_text: String) {
+    pub fn info(&self, log_text: &String) {
         self.log(&Record::builder()
                 .args(format_args!("{}", log_text))
                 .level(Level::Info)
@@ -31,7 +31,7 @@ impl Logger<'_> {
                 .build());
     }
 
-    pub fn warning(&self, log_text: String) {
+    pub fn warning(&self, log_text: &String) {
         self.log(&Record::builder()
                 .args(format_args!("{}", log_text))
                 .level(Level::Warn)
@@ -41,7 +41,7 @@ impl Logger<'_> {
                 .build());
     }
 
-    pub fn error(&self, log_text: String) {
+    pub fn error(&self, log_text: &String) {
         self.log(&Record::builder()
                 .args(format_args!("{}", log_text))
                 .level(Level::Error)

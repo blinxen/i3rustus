@@ -1,4 +1,5 @@
 use std::error::Error;
+use std::io::Error as IO_Error;
 use std::fmt;
 
 pub mod time;
@@ -42,6 +43,13 @@ pub trait Widget {
 #[derive(Debug)]
 pub struct WidgetError { error_message: String }
 
+impl WidgetError {
+
+    pub fn new(msg: String) -> Self {
+        WidgetError { error_message: msg }
+    }
+}
+
 impl fmt::Display for WidgetError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "Woah, something bad happend!")
@@ -49,3 +57,9 @@ impl fmt::Display for WidgetError {
 }
 
 impl Error for WidgetError {}
+
+impl From<IO_Error> for WidgetError {
+    fn from(item: IO_Error) -> Self {
+        WidgetError::new(item.to_string())
+    }
+}

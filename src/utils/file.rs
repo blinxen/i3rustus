@@ -14,12 +14,12 @@ pub fn read_file(path: &str) -> Option<File> {
 
 }
 
-pub fn read_first_line_in_file(path: &str) -> String {
-    let first_line = String::new();
+pub fn read_first_line_in_file(path: &str) -> Result<String, Error> {
+    let mut first_line = String::new();
     let file: Result<File, Error> = OpenOptions::new()
                                         .read(true)
                                         .open(path);
 
-    BufReader::new(file.unwrap()).read_line(&mut first_line);
-    first_line
+    BufReader::new(file?).read_line(&mut first_line)?;
+    Ok(first_line)
 }

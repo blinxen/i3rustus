@@ -54,7 +54,7 @@ impl<'a> Widget for Disk {
                 format!("{name}: {calculated_storage:.1} GiB")
             ),
             Err(msg) => {
-                LOGGER.error(msg.to_string());
+                LOGGER.error(&msg.to_string());
                 return Err(WidgetError { error_message: msg.to_string() } )
             }
         }

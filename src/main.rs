@@ -11,6 +11,8 @@ use widgets::disk_stats::Disk;
 use widgets::{ Widget };
 use log::{ LevelFilter };
 use widgets::memory_stats::MemoryUsage;
+use widgets::cpu_stats::CpuUsage;
+use widgets::cpu_stats::CpuUsageType;
 
 static LOGGER: Logger = Logger { log_file: "/var/log/i3rustus.log" };
 
@@ -81,6 +83,8 @@ fn main() {
     let final_config = I3Config {
         version: 1,
         widgets: vec![
+            Box::new(CpuUsage::new(CpuUsageType::Percentage)),
+            Box::new(CpuUsage::new(CpuUsageType::CpuLoad)),
             Box::new(MemoryUsage {}),
             Box::new(Disk {
                 path_to_watch: (String::from("root"), String::from("/"))

@@ -1,12 +1,10 @@
-use std::fs::File;
-use std::fs::OpenOptions;
 use std::io::BufRead;
-use std::io::Error;
 use std::io::BufReader;
 use std::num::ParseFloatError;
 
 use crate::widgets::Widget;
 use crate::widgets::WidgetError;
+use crate::utils::file::read_file;
 
 #[derive(Debug)]
 struct MemoryInfromation {
@@ -30,17 +28,6 @@ struct MemoryInfromation {
 pub struct MemoryUsage {}
 
 impl MemoryUsage {
-
-    fn read_file(&self) -> Option<File> {
-        let meminfo: Result<File, Error> = OpenOptions::new()
-                                                        .read(true)
-                                                        .open("/proc/meminfo");
-        match meminfo {
-            Ok(file) => Some(file),
-            _ => None
-        }
-
-    }
 
     fn get_int_from_str(&self, str_to_parse: String) -> Result<f32, ParseFloatError> {
         // This will be a string with only numbers, so we can convert
@@ -68,7 +55,7 @@ impl MemoryUsage {
             reclaimable: 0.0
         };
 
-        if let Some(memory_file) = self.read_file() {
+        if let Some(memory_file) = read_file("/proc/meminfo") {
             let reader = BufReader::new(memory_file);
             for line in reader.lines() {
                 if let Ok(line) = line {

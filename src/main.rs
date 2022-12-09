@@ -3,7 +3,6 @@ mod widgets;
 
 use std::{thread, time};
 use serde_json::{ Value, json };
-use std::collections::HashMap;
 
 use utils::json::jsonify;
 use utils::logger::Logger;

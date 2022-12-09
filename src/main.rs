@@ -89,11 +89,9 @@ fn main() {
             Box::new(Battery::new()),
             Box::new(CpuUsage::new(CpuUsageType::CpuLoad)),
             Box::new(CpuUsage::new(CpuUsageType::Percentage)),
-            Box::new(MemoryUsage {}),
-            Box::new(Disk {
-                path_to_watch: (String::from("root"), String::from("/"))
-            }),
-            Box::new(Time {})
+            Box::new(MemoryUsage::new()),
+            Box::new(Disk::new(String::from("root"), String::from("/"))),
+            Box::new(Time::new())
         ]
     };
 

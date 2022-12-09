@@ -6,6 +6,14 @@ use crate::widgets::WidgetError;
 
 pub struct Time { }
 
+impl Time {
+
+    pub fn new() -> Self {
+        Time { }
+    }
+
+}
+
 impl Widget for Time {
 
     fn name(&self) -> &str {

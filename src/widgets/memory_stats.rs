@@ -29,6 +29,10 @@ pub struct MemoryUsage {}
 
 impl MemoryUsage {
 
+    pub fn new() -> Self {
+        MemoryUsage { }
+    }
+
     fn get_int_from_str(&self, str_to_parse: String) -> Result<f32, ParseFloatError> {
         // This will be a string with only numbers, so we can convert
         // it to a f32

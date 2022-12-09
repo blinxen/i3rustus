@@ -12,10 +12,14 @@ use crate::widgets::WidgetError;
 
 /// A struct that holds a Map of all paths that we want to watch over
 pub struct Disk {
-    pub path_to_watch: (String, String)
+    path_to_watch: (String, String)
 }
 
 impl<'a> Disk {
+
+    pub fn new(display_name: String, path: String) -> Self {
+        Disk { path_to_watch: (display_name, path) }
+    }
 
     fn calulcate_available_disk_storage(&self, path: &Path) -> Result<f64, Error> {
         let mut directory_size = 0;

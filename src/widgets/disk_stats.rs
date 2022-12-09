@@ -55,7 +55,7 @@ impl<'a> Widget for Disk {
             ),
             Err(msg) => {
                 LOGGER.error(&msg.to_string());
-                return Err(WidgetError { error_message: msg.to_string() } )
+                return Err(WidgetError::new(msg.to_string()))
             }
         }
 

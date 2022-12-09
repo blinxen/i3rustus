@@ -106,7 +106,7 @@ impl Widget for MemoryUsage {
                     total_usable = usage.total_usable / 1024.0 / 1024.0
                 )
             ),
-            Err(msg) => return Err(WidgetError { error_message: msg.to_string() } )
+            Err(msg) => return Err(WidgetError::new(msg.to_string()))
         }
     }
 }

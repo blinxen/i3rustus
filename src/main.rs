@@ -14,6 +14,8 @@ use log::{ LevelFilter };
 use widgets::memory_stats::MemoryUsage;
 use widgets::cpu_stats::CpuUsage;
 use widgets::cpu_stats::CpuUsageType;
+use widgets::internet_connection::InternetType;
+use widgets::internet_connection::InternetInformation;
 
 static LOGGER: Logger = Logger { log_file: "/var/log/i3rustus.log" };
 
@@ -86,6 +88,7 @@ fn main() {
     let final_config = I3Config {
         version: 1,
         widgets: vec![
+            Box::new(InternetInformation::new(InternetType::Ethernet)),
             Box::new(Battery::new()),
             Box::new(CpuUsage::new(CpuUsageType::CpuLoad)),
             Box::new(CpuUsage::new(CpuUsageType::Percentage)),

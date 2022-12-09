@@ -7,6 +7,7 @@ pub mod disk_stats;
 pub mod memory_stats;
 pub mod cpu_stats;
 pub mod battery_life;
+pub mod internet_connection;
 
 /// All widgets HAVE to implement this trait
 pub trait Widget {

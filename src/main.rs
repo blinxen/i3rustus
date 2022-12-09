@@ -85,8 +85,8 @@ fn main() {
     let final_config = I3Config {
         version: 1,
         widgets: vec![
-            Box::new(CpuUsage::new(CpuUsageType::Percentage)),
             Box::new(CpuUsage::new(CpuUsageType::CpuLoad)),
+            Box::new(CpuUsage::new(CpuUsageType::Percentage)),
             Box::new(MemoryUsage {}),
             Box::new(Disk {
                 path_to_watch: (String::from("root"), String::from("/"))

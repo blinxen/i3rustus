@@ -2,9 +2,9 @@ use std::io::BufRead;
 use std::io::BufReader;
 use std::num::ParseFloatError;
 
+use crate::utils::file::read_file;
 use crate::widgets::Widget;
 use crate::widgets::WidgetError;
-use crate::utils::file::read_file;
 
 #[derive(Debug)]
 struct MemoryInfromation {
@@ -22,15 +22,14 @@ struct MemoryInfromation {
     // In memory cache for files from disk
     cache: f32,
     // Probably reclaimable cache or something like that
-    reclaimable: f32
+    reclaimable: f32,
 }
 
 pub struct MemoryUsage {}
 
 impl MemoryUsage {
-
     pub fn new() -> Self {
-        MemoryUsage { }
+        MemoryUsage {}
     }
 
     fn get_int_from_str(&self, str_to_parse: String) -> Result<f32, ParseFloatError> {
@@ -56,14 +55,13 @@ impl MemoryUsage {
             mem_free: 0.0,
             buffers: 0.0,
             cache: 0.0,
-            reclaimable: 0.0
+            reclaimable: 0.0,
         };
 
         if let Some(memory_file) = read_file("/proc/meminfo") {
             let reader = BufReader::new(memory_file);
             for line in reader.lines() {
                 if let Ok(line) = line {
-
                     if line.starts_with("MemTotal") {
                         // Convert to kb to gb
                         memory_information.total_usable = self.get_int_from_str(line)?;
@@ -81,36 +79,31 @@ impl MemoryUsage {
                 }
             }
 
-            memory_information.used = memory_information.total_usable -
-                memory_information.mem_free -
-                memory_information.buffers -
-                memory_information.cache -
-                memory_information.reclaimable
+            memory_information.used = memory_information.total_usable
+                - memory_information.mem_free
+                - memory_information.buffers
+                - memory_information.cache
+                - memory_information.reclaimable
         }
 
         Ok(memory_information)
     }
-
 }
 
 impl Widget for MemoryUsage {
-
     fn name(&self) -> &str {
         "memory"
     }
 
     fn display_text(&self) -> Result<String, WidgetError> {
-
         match self.get_usage() {
-            Ok(usage) => Ok(
-                format!(
-                    "RAM (GiB): U={used:.1} A={available:.1} / {total_usable:.1}",
-                    used = usage.used / 1024.0 / 1024.0,
-                    available = usage.available / 1024.0 / 1024.0,
-                    total_usable = usage.total_usable / 1024.0 / 1024.0
-                )
-            ),
-            Err(msg) => return Err(WidgetError::new(msg.to_string()))
+            Ok(usage) => Ok(format!(
+                "RAM (GiB): U={used:.1} A={available:.1} / {total_usable:.1}",
+                used = usage.used / 1024.0 / 1024.0,
+                available = usage.available / 1024.0 / 1024.0,
+                total_usable = usage.total_usable / 1024.0 / 1024.0
+            )),
+            Err(msg) => return Err(WidgetError::new(msg.to_string())),
         }
     }
 }

@@ -1,31 +1,32 @@
 mod utils;
 mod widgets;
 
+use serde_json::{json, Value};
 use std::{thread, time};
-use serde_json::{ Value, json };
 
+use log::LevelFilter;
 use utils::json::jsonify;
 use utils::logger::Logger;
 use widgets::battery_life::Battery;
-use widgets::time::Time;
-use widgets::disk_stats::Disk;
-use widgets::{ Widget };
-use log::{ LevelFilter };
-use widgets::memory_stats::MemoryUsage;
 use widgets::cpu_stats::CpuUsage;
 use widgets::cpu_stats::CpuUsageType;
-use widgets::internet_connection::InternetType;
+use widgets::disk_stats::Disk;
 use widgets::internet_connection::InternetInformation;
+use widgets::internet_connection::InternetType;
+use widgets::memory_stats::MemoryUsage;
+use widgets::time::Time;
+use widgets::Widget;
 
-static LOGGER: Logger = Logger { log_file: "/var/log/i3rustus.log" };
+static LOGGER: Logger = Logger {
+    log_file: "/var/log/i3rustus.log",
+};
 
 struct I3Config {
     version: u8,
-    widgets: Vec<Box<dyn Widget>>
+    widgets: Vec<Box<dyn Widget>>,
 }
 
 impl I3Config {
-
     fn version(&self) -> u8 {
         return self.version;
     }
@@ -41,13 +42,13 @@ impl I3Config {
             match jsonify::<String>(&(widget.to_json())) {
                 Ok(conf) => widget_config = conf,
                 Err(error) => {
-                    LOGGER.warning(
-                        &format!(
-                            "Invalid config for {}: \n\tTried to convert `{}` to JSON\n\t{}",
-                            widget.name(),
-                            widget.to_json(),
-                            error));
-                    continue
+                    LOGGER.warning(&format!(
+                        "Invalid config for {}: \n\tTried to convert `{}` to JSON\n\t{}",
+                        widget.name(),
+                        widget.to_json(),
+                        error
+                    ));
+                    continue;
                 }
             }
 
@@ -76,7 +77,6 @@ impl I3Config {
 }
 
 fn main() {
-
     // Set logger
     match log::set_logger(&LOGGER).map(|()| log::set_max_level(LevelFilter::Error)) {
         Err(error) => println!("Enable to set logger: {}", error),
@@ -88,14 +88,15 @@ fn main() {
     let final_config = I3Config {
         version: 1,
         widgets: vec![
+            Box::new(InternetInformation::new(InternetType::Wlan)),
             Box::new(InternetInformation::new(InternetType::Ethernet)),
             Box::new(Battery::new()),
             Box::new(CpuUsage::new(CpuUsageType::CpuLoad)),
             Box::new(CpuUsage::new(CpuUsageType::Percentage)),
             Box::new(MemoryUsage::new()),
             Box::new(Disk::new(String::from("root"), String::from("/"))),
-            Box::new(Time::new())
-        ]
+            Box::new(Time::new()),
+        ],
     };
 
     final_config.init();

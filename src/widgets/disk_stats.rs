@@ -5,20 +5,21 @@ use std::path::Path;
 
 use libc::statvfs;
 
-use crate::LOGGER;
 use crate::utils::macros::cast_to_u64;
 use crate::widgets::Widget;
 use crate::widgets::WidgetError;
+use crate::LOGGER;
 
 /// A struct that holds a Map of all paths that we want to watch over
 pub struct Disk {
-    path_to_watch: (String, String)
+    path_to_watch: (String, String),
 }
 
 impl<'a> Disk {
-
     pub fn new(display_name: String, path: String) -> Self {
-        Disk { path_to_watch: (display_name, path) }
+        Disk {
+            path_to_watch: (display_name, path),
+        }
     }
 
     fn calulcate_available_disk_storage(&self, path: &Path) -> Result<f64, Error> {
@@ -34,15 +35,12 @@ impl<'a> Disk {
                 directory_size = cast_to_u64!(tmp);
             }
 
-            Ok(directory_size as f64/ 1024.0 / 1024.0 / 1024.0)
+            Ok(directory_size as f64 / 1024.0 / 1024.0 / 1024.0)
         }
-
     }
-
 }
 
 impl<'a> Widget for Disk {
-
     fn name(&self) -> &str {
         "disk"
     }
@@ -54,14 +52,11 @@ impl<'a> Widget for Disk {
         let (name, path) = &self.path_to_watch;
 
         match self.calulcate_available_disk_storage(&Path::new(path)) {
-            Ok(calculated_storage) => Ok(
-                format!("{name}: {calculated_storage:.1} GiB")
-            ),
+            Ok(calculated_storage) => Ok(format!("{name}: {calculated_storage:.1} GiB")),
             Err(msg) => {
                 LOGGER.error(&msg.to_string());
-                return Err(WidgetError::new(msg.to_string()))
+                return Err(WidgetError::new(msg.to_string()));
             }
         }
-
     }
 }

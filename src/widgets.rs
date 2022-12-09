@@ -1,13 +1,13 @@
 use std::error::Error;
-use std::io::Error as IO_Error;
 use std::fmt;
+use std::io::Error as IO_Error;
 
-pub mod time;
-pub mod disk_stats;
-pub mod memory_stats;
-pub mod cpu_stats;
 pub mod battery_life;
+pub mod cpu_stats;
+pub mod disk_stats;
 pub mod internet_connection;
+pub mod memory_stats;
+pub mod time;
 
 /// All widgets HAVE to implement this trait
 pub trait Widget {
@@ -25,7 +25,7 @@ pub trait Widget {
 
         match self.display_text() {
             Ok(text) => full_text = text,
-            Err(error) => full_text = String::from(error.error_message)
+            Err(error) => full_text = String::from(error.error_message),
         }
 
         format!(
@@ -36,17 +36,17 @@ pub trait Widget {
             self.name()
         )
     }
-
 }
 
 // This should be used to signal that a widget is not working properly
 // The idea is that display_text return this Error and then we can so some generic
 // Error handling for all widgets in to_json
 #[derive(Debug)]
-pub struct WidgetError { error_message: String }
+pub struct WidgetError {
+    error_message: String,
+}
 
 impl WidgetError {
-
     pub fn new(msg: String) -> Self {
         WidgetError { error_message: msg }
     }

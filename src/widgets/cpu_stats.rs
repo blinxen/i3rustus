@@ -1,15 +1,14 @@
-use std::{cell::Cell};
+use std::cell::Cell;
 
 use crate::utils::file::read_first_line_in_file;
 
-use super::{WidgetError, Widget};
-
+use super::{Widget, WidgetError};
 
 pub enum CpuUsageType {
     // Show load
     CpuLoad,
     // Show percentage of the cpu usage
-    Percentage
+    Percentage,
 }
 
 pub struct CpuUsage {
@@ -35,12 +34,11 @@ pub struct CpuUsage {
 }
 
 impl CpuUsage {
-
     pub fn new(usage_type: CpuUsageType) -> CpuUsage {
         CpuUsage {
             usage_type: usage_type,
             last_idle_usage: Cell::new(0.0),
-            last_total_usage: Cell::new(0.0)
+            last_total_usage: Cell::new(0.0),
         }
     }
 
@@ -48,9 +46,7 @@ impl CpuUsage {
         let load_avg = read_first_line_in_file("/proc/loadavg")?;
         // We only want the the load and not the
         let load = &load_avg.split_whitespace().collect::<Vec<&str>>()[0..3];
-        Ok(
-            format!("Load: {}", load.join(" "))
-        )
+        Ok(format!("Load: {}", load.join(" ")))
     }
 
     fn get_cpu_usage(&self) -> Result<String, WidgetError> {
@@ -61,7 +57,6 @@ impl CpuUsage {
         let (_, cpu_stats) = cpu_line.split_once("  ").unwrap();
 
         for (i, number) in cpu_stats.trim().split(" ").enumerate() {
-
             let number_as_u32 = number.parse::<f32>().unwrap();
 
             if i == 3 {
@@ -73,25 +68,22 @@ impl CpuUsage {
         let idle_delta = idle - self.last_idle_usage.replace(idle);
         let total_delta = total - self.last_total_usage.replace(total);
 
-        Ok(
-            format!("CPU: {:.0}%", 100.0 * (1.0 - idle_delta / total_delta))
-        )
+        Ok(format!(
+            "CPU: {:.0}%",
+            100.0 * (1.0 - idle_delta / total_delta)
+        ))
     }
-
 }
 
 impl Widget for CpuUsage {
-
     fn name(&self) -> &str {
         "cpu"
     }
 
     fn display_text(&self) -> Result<String, WidgetError> {
-
         match self.usage_type {
             CpuUsageType::CpuLoad => self.get_cpu_load(),
-            CpuUsageType::Percentage => self.get_cpu_usage()
+            CpuUsageType::Percentage => self.get_cpu_usage(),
         }
     }
-
 }

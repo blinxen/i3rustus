@@ -1,8 +1,8 @@
 // Inspired by from https://docs.rs/log/latest/log/
-use log::{ Record, Level, Metadata, Log };
+use log::{Level, Log, Metadata, Record};
 
 pub struct Logger<'a> {
-    pub log_file: &'a str
+    pub log_file: &'a str,
 }
 
 impl Log for Logger<'_> {
@@ -20,34 +20,39 @@ impl Log for Logger<'_> {
 }
 
 impl Logger<'_> {
-
     pub fn info(&self, log_text: &String) {
-        self.log(&Record::builder()
+        self.log(
+            &Record::builder()
                 .args(format_args!("{}", log_text))
                 .level(Level::Info)
                 .target("i3rustus")
                 .file(Some(self.log_file))
                 .line(Some(144))
-                .build());
+                .build(),
+        );
     }
 
     pub fn warning(&self, log_text: &String) {
-        self.log(&Record::builder()
+        self.log(
+            &Record::builder()
                 .args(format_args!("{}", log_text))
                 .level(Level::Warn)
                 .target("i3rustus")
                 .file(Some(self.log_file))
                 .line(Some(144))
-                .build());
+                .build(),
+        );
     }
 
     pub fn error(&self, log_text: &String) {
-        self.log(&Record::builder()
+        self.log(
+            &Record::builder()
                 .args(format_args!("{}", log_text))
                 .level(Level::Error)
                 .target("i3rustus")
                 .file(Some(self.log_file))
                 .line(Some(144))
-                .build());
+                .build(),
+        );
     }
 }

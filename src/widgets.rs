@@ -6,8 +6,8 @@ use std::string::FromUtf8Error;
 pub mod battery_life;
 pub mod cpu_stats;
 pub mod disk_stats;
-pub mod network_information;
 pub mod memory_stats;
+pub mod network_information;
 pub mod time;
 
 /// All widgets HAVE to implement this trait

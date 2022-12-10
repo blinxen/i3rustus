@@ -11,9 +11,9 @@ use widgets::battery_life::Battery;
 use widgets::cpu_stats::CpuUsage;
 use widgets::cpu_stats::CpuUsageType;
 use widgets::disk_stats::Disk;
+use widgets::memory_stats::MemoryUsage;
 use widgets::network_information::NetworkInformation;
 use widgets::network_information::NetworkType;
-use widgets::memory_stats::MemoryUsage;
 use widgets::time::Time;
 use widgets::Widget;
 

@@ -23,6 +23,7 @@ impl NetworkInformation {
     }
 
     fn get_wlan_information(&self) -> Result<String, WidgetError> {
+        // TODO: Use netfilter to get information instead of relying on 'iw'
         // Information can also be found under /sys/class/net/<DEV>/uevent
         let wlan_devices_list = String::from_utf8(Command::new("iw").arg("dev").output()?.stdout)?;
         // Look for the index of the "Interface" substring
@@ -51,7 +52,7 @@ impl NetworkInformation {
                 .0
                 .to_string();
         } else {
-            wlan_ssid = String::from("down");
+            wlan_ssid = String::from("W: down");
         }
         Ok(format!("W: ({})", wlan_ssid))
     }

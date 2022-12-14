@@ -20,7 +20,7 @@ impl Log for Logger<'_> {
 }
 
 impl Logger<'_> {
-    pub fn info(&self, log_text: &String) {
+    pub fn info(&self, log_text: &str) {
         self.log(
             &Record::builder()
                 .args(format_args!("{}", log_text))
@@ -32,7 +32,7 @@ impl Logger<'_> {
         );
     }
 
-    pub fn warning(&self, log_text: &String) {
+    pub fn warning(&self, log_text: &str) {
         self.log(
             &Record::builder()
                 .args(format_args!("{}", log_text))
@@ -44,7 +44,7 @@ impl Logger<'_> {
         );
     }
 
-    pub fn error(&self, log_text: &String) {
+    pub fn error(&self, log_text: &str) {
         self.log(
             &Record::builder()
                 .args(format_args!("{}", log_text))

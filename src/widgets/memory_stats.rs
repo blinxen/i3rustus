@@ -2,9 +2,12 @@ use std::io::BufRead;
 use std::io::BufReader;
 use std::num::ParseFloatError;
 
+use crate::config::TextColor;
 use crate::utils::file::read_file;
 use crate::widgets::Widget;
 use crate::widgets::WidgetError;
+
+const MEMORY_THRESHOLD: f32 = 50.0;
 
 #[derive(Debug)]
 struct MemoryInfromation {
@@ -48,7 +51,7 @@ impl MemoryUsage {
     }
 
     fn get_usage(&self) -> Result<MemoryInfromation, ParseFloatError> {
-        let mut memory_information: MemoryInfromation = MemoryInfromation {
+        let mut memory_information = MemoryInfromation {
             used: 0.0,
             available: 0.0,
             total_usable: 0.0,
@@ -95,14 +98,24 @@ impl Widget for MemoryUsage {
         "memory"
     }
 
-    fn display_text(&self) -> Result<String, WidgetError> {
+    fn display_text(&self) -> Result<(String, TextColor), WidgetError> {
         match self.get_usage() {
-            Ok(usage) => Ok(format!(
-                "RAM (GiB): U={used:.1} A={available:.1} / {total_usable:.1}",
-                used = usage.used / 1024.0 / 1024.0,
-                available = usage.available / 1024.0 / 1024.0,
-                total_usable = usage.total_usable / 1024.0 / 1024.0
-            )),
+            Ok(usage) => {
+                let color = if (usage.available / usage.total_usable * 100.0) > MEMORY_THRESHOLD {
+                    TextColor::Critical
+                } else {
+                    TextColor::Neutral
+                };
+                Ok((
+                    format!(
+                        "RAM (GiB): U={used:.1} A={available:.1} / {total_usable:.1}",
+                        used = usage.used / 1024.0 / 1024.0,
+                        available = usage.available / 1024.0 / 1024.0,
+                        total_usable = usage.total_usable / 1024.0 / 1024.0
+                    ),
+                    color,
+                ))
+            }
             Err(msg) => return Err(WidgetError::new(msg.to_string())),
         }
     }

@@ -1,8 +1,11 @@
+use crate::config::TextColor;
 use std::cell::Cell;
 
 use crate::utils::file::read_first_line_in_file;
 
 use super::{Widget, WidgetError};
+
+const CPU_USAGE_THRESHOLD: f32 = 30.0;
 
 pub enum CpuUsageType {
     // Show load
@@ -49,7 +52,7 @@ impl CpuUsage {
         Ok(format!("Load: {}", load.join(" ")))
     }
 
-    fn get_cpu_usage(&self) -> Result<String, WidgetError> {
+    fn get_cpu_usage(&self) -> Result<f32, WidgetError> {
         let mut total: f32 = 0.0;
         let mut idle: f32 = 0.0;
 
@@ -68,10 +71,7 @@ impl CpuUsage {
         let idle_delta = idle - self.last_idle_usage.replace(idle);
         let total_delta = total - self.last_total_usage.replace(total);
 
-        Ok(format!(
-            "CPU: {:.0}%",
-            100.0 * (1.0 - idle_delta / total_delta)
-        ))
+        Ok(100.0 * (1.0 - idle_delta / total_delta))
     }
 }
 
@@ -80,10 +80,19 @@ impl Widget for CpuUsage {
         "cpu"
     }
 
-    fn display_text(&self) -> Result<String, WidgetError> {
+    fn display_text(&self) -> Result<(String, TextColor), WidgetError> {
         match self.usage_type {
-            CpuUsageType::CpuLoad => self.get_cpu_load(),
-            CpuUsageType::Percentage => self.get_cpu_usage(),
+            // TODO: Maybe parse the load and evaluate it?
+            CpuUsageType::CpuLoad => Ok((self.get_cpu_load()?, TextColor::Neutral)),
+            CpuUsageType::Percentage => {
+                let cpu_usage = self.get_cpu_usage()?;
+                let color = if cpu_usage > CPU_USAGE_THRESHOLD {
+                    TextColor::Critical
+                } else {
+                    TextColor::Neutral
+                };
+                Ok((format!("CPU: {:.0}%", cpu_usage), color))
+            }
         }
     }
 }

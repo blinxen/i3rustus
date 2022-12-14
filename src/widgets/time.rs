@@ -1,6 +1,7 @@
 use chrono::DateTime;
 use chrono::Local;
 
+use crate::config::TextColor;
 use crate::widgets::Widget;
 use crate::widgets::WidgetError;
 
@@ -17,8 +18,11 @@ impl Widget for Time {
         "time"
     }
 
-    fn display_text(&self) -> Result<String, WidgetError> {
+    fn display_text(&self) -> Result<(String, TextColor), WidgetError> {
         let current_time: DateTime<Local> = Local::now();
-        Ok(format!("{}", current_time.format("%d.%m.%Y %H:%M:%S")))
+        Ok((
+            format!("{}", current_time.format("%d.%m.%Y %H:%M:%S")),
+            TextColor::Neutral,
+        ))
     }
 }

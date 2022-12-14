@@ -1,3 +1,4 @@
+use crate::config::TextColor;
 use crate::utils::file::{read_file, read_first_line_in_file};
 
 use super::{Widget, WidgetError};
@@ -5,6 +6,7 @@ use std::io::{BufRead, BufReader, Error};
 
 const BATTERY_STATUS_PATH: &str = "/sys/class/power_supply/BAT0/status";
 const BATTERY_STATS_PATH: &str = "/sys/class/power_supply/BAT0/uevent";
+const BATTERY_THRESHOLD: f32 = 20.0;
 
 pub struct Battery {}
 
@@ -32,7 +34,7 @@ impl Battery {
         }
     }
 
-    fn get_battery_life(&self) -> Result<String, Error> {
+    fn get_battery_life(&self) -> Result<f32, WidgetError> {
         let mut power_full: f32 = 0.0;
         let mut power_now: f32 = 0.0;
 
@@ -65,7 +67,7 @@ impl Battery {
             }
         }
 
-        Ok(format!("{:.2}", (power_now / power_full) * 100.0))
+        Ok(power_now / power_full * 100.0)
     }
 }
 
@@ -74,18 +76,20 @@ impl Widget for Battery {
         "battery"
     }
 
-    fn display_text(&self) -> Result<String, WidgetError> {
-        // Is it possible to beatify this?
+    fn display_text(&self) -> Result<(String, TextColor), WidgetError> {
         let state = match self.get_battery_state() {
             Ok(state) => Ok(state),
             Err(msg) => Err(WidgetError::new(msg.to_string())),
         };
 
-        let life = match self.get_battery_life() {
-            Ok(life) => Ok(life),
-            Err(msg) => Err(WidgetError::new(msg.to_string())),
+        let life = self.get_battery_life()?;
+
+        let color = if life < BATTERY_THRESHOLD {
+            TextColor::Critical
+        } else {
+            TextColor::Neutral
         };
 
-        Ok(format!("{} BAT {}%", state?, life?))
+        Ok((format!("{} BAT {:.2}%", state?, life), color))
     }
 }

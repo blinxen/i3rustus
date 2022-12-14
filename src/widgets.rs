@@ -1,6 +1,7 @@
+use crate::config::{self, TextColor};
 use std::error::Error;
 use std::fmt;
-use std::io::Error as IO_Error;
+use std::io;
 use std::string::FromUtf8Error;
 
 pub mod battery_life;
@@ -16,25 +17,34 @@ pub trait Widget {
     // so we don't need to use String
     fn name(&self) -> &str;
     // The text that will be shown on the status bar
-    fn display_text(&self) -> Result<String, WidgetError>;
+    // This method returns the full_text and the color the text should have
+    fn display_text(&self) -> Result<(String, TextColor), WidgetError>;
     // JSON representation of the widget
     fn to_json(&self) -> String {
         // full_text is defined by i3 and is the display_text
         // Name is not defined by i3 and is only used to know which
         // config belongs to which widget
-        let full_text: String;
+        let (full_text, text_color): (String, TextColor);
 
         match self.display_text() {
-            Ok(text) => full_text = text,
-            Err(error) => full_text = String::from(error.error_message),
+            Ok((text, color)) => (full_text, text_color) = (text, color),
+            Err(error) => {
+                (full_text, text_color) = (String::from(error.error_message), TextColor::Critical)
+            }
         }
 
         format!(
-            "{{ \"full_text\": \"{}\", \"name\": \"{}\" }}",
+            "{{ \"full_text\": \"{}\", \"name\": \"{}\", \"color\": \"{}\" }}",
             // unwrap should be safe to use here, because we check
             // wether text is OK or not first
             full_text,
-            self.name()
+            self.name(),
+            match text_color {
+                TextColor::Neutral => config::NEUTRAL,
+                TextColor::Good => config::GREEN,
+                TextColor::Warning => config::YELLOW,
+                TextColor::Critical => config::RED,
+            }
         )
     }
 }
@@ -61,8 +71,8 @@ impl fmt::Display for WidgetError {
 
 impl Error for WidgetError {}
 
-impl From<IO_Error> for WidgetError {
-    fn from(item: IO_Error) -> Self {
+impl From<io::Error> for WidgetError {
+    fn from(item: io::Error) -> Self {
         WidgetError::new(item.to_string())
     }
 }

@@ -1,7 +1,9 @@
+use crate::config::TextColor;
 use crate::widgets::Widget;
 use crate::widgets::WidgetError;
 use std::process::Command;
 
+#[derive(PartialEq)]
 pub enum NetworkType {
     Ethernet,
     Wlan,
@@ -19,7 +21,7 @@ impl NetworkInformation {
     }
 
     fn get_ethernet_information(&self) -> Result<String, WidgetError> {
-        Ok(String::new())
+        Ok(String::from("E: down"))
     }
 
     fn get_wlan_information(&self) -> Result<String, WidgetError> {
@@ -63,10 +65,19 @@ impl Widget for NetworkInformation {
         "network"
     }
 
-    fn display_text(&self) -> Result<String, WidgetError> {
-        match self.network_type {
-            NetworkType::Ethernet => self.get_ethernet_information(),
-            NetworkType::Wlan => self.get_wlan_information(),
-        }
+    fn display_text(&self) -> Result<(String, TextColor), WidgetError> {
+        let network_fn = if self.network_type == NetworkType::Ethernet {
+            NetworkInformation::get_ethernet_information
+        } else {
+            NetworkInformation::get_wlan_information
+        };
+
+        let network_information = network_fn(self)?;
+        let color = if network_information.contains("down") {
+            TextColor::Critical
+        } else {
+            TextColor::Good
+        };
+        Ok((network_information, color))
     }
 }

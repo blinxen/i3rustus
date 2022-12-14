@@ -39,7 +39,7 @@ pub struct CpuUsage {
 impl CpuUsage {
     pub fn new(usage_type: CpuUsageType) -> CpuUsage {
         CpuUsage {
-            usage_type: usage_type,
+            usage_type,
             last_idle_usage: Cell::new(0.0),
             last_total_usage: Cell::new(0.0),
         }
@@ -59,7 +59,7 @@ impl CpuUsage {
         let cpu_line = read_first_line_in_file("/proc/stat")?;
         let (_, cpu_stats) = cpu_line.split_once("  ").unwrap();
 
-        for (i, number) in cpu_stats.trim().split(" ").enumerate() {
+        for (i, number) in cpu_stats.trim().split(' ').enumerate() {
             let number_as_u32 = number.parse::<f32>().unwrap();
 
             if i == 3 {

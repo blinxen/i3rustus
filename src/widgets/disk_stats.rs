@@ -16,7 +16,7 @@ pub struct Disk {
     path_to_watch: (String, String),
 }
 
-impl<'a> Disk {
+impl Disk {
     pub fn new(display_name: String, path: String) -> Self {
         Disk {
             path_to_watch: (display_name, path),
@@ -60,7 +60,7 @@ impl<'a> Disk {
     }
 }
 
-impl<'a> Widget for Disk {
+impl Widget for Disk {
     fn name(&self) -> &str {
         "disk"
     }
@@ -70,9 +70,9 @@ impl<'a> Widget for Disk {
         // and self is already borrowed. That means that we cannot move the "path_to_watch" variable
         // out of the shared reference because we don't own the reference.
         let (name, path) = &self.path_to_watch;
-        let available_space = self.calulcate_available_disk_storage(&Path::new(path));
-        let total_space = self.get_total_disk_storage(&Path::new(path));
-        let color = if (available_space / total_space * 100) < DISK_THRESHOLD {
+        let available_space = self.calulcate_available_disk_storage(Path::new(path));
+        let total_space = self.get_total_disk_storage(Path::new(path));
+        let color = if (available_space / total_space * 100) > DISK_THRESHOLD {
             TextColor::Critical
         } else {
             TextColor::Neutral

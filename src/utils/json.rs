@@ -4,6 +4,6 @@ use serde_json::{Result, Value};
 // FYI: str and String implement that trait
 pub fn jsonify<T: AsRef<str>>(json_str: &str) -> Result<Value> {
     // as_ref returns the needed &str
-    let value: Value = serde_json::from_str(json_str.as_ref())?;
+    let value: Value = serde_json::from_str(json_str)?;
     Ok(value)
 }

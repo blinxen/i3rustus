@@ -29,19 +29,15 @@ struct I3Config {
 
 impl I3Config {
     fn version(&self) -> u8 {
-        return self.version;
+        self.version
     }
 
     fn widgets_config(&self) -> Value {
         let mut config: Value = json!([]);
 
         for widget in self.widgets.iter() {
-            let widget_config: Value;
-            // The brackets for widget.to_json were added
-            // to indicate that we are getting a ref from the
-            // result of `to_json` and not the widget itself
-            match jsonify::<String>(&(widget.to_json())) {
-                Ok(conf) => widget_config = conf,
+            let widget_config: Value = match jsonify::<String>(&(widget.to_json())) {
+                Ok(conf) => conf,
                 Err(error) => {
                     LOGGER.warning(&format!(
                         "Invalid config for {}: \n\tTried to convert `{}` to JSON\n\t{}",
@@ -51,13 +47,13 @@ impl I3Config {
                     ));
                     continue;
                 }
-            }
+            };
 
             // Is it OK to do an unwrap here?
             config.as_array_mut().unwrap().push(widget_config);
         }
 
-        return config;
+        config
     }
 
     fn init(&self) {
@@ -79,9 +75,8 @@ impl I3Config {
 
 fn main() {
     // Set logger
-    match log::set_logger(&LOGGER).map(|()| log::set_max_level(LevelFilter::Error)) {
-        Err(error) => println!("Enable to set logger: {}", error),
-        _ => {}
+    if let Err(error) = log::set_logger(&LOGGER).map(|()| log::set_max_level(LevelFilter::Error)) {
+        println!("Enable to set logger: {}", error);
     }
 
     // Run each Widget in its own thread

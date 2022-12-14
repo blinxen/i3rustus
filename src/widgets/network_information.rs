@@ -3,7 +3,7 @@ use crate::widgets::Widget;
 use crate::widgets::WidgetError;
 use std::process::Command;
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Eq)]
 pub enum NetworkType {
     Ethernet,
     Wlan,
@@ -15,9 +15,7 @@ pub struct NetworkInformation {
 
 impl NetworkInformation {
     pub fn new(network_type: NetworkType) -> Self {
-        NetworkInformation {
-            network_type: network_type,
-        }
+        NetworkInformation { network_type }
     }
 
     fn get_ethernet_information(&self) -> Result<String, WidgetError> {
@@ -32,10 +30,10 @@ impl NetworkInformation {
         let wlan_device_name_index = wlan_devices_list.find("Interface ").unwrap();
         // Example: wlp3s0
         let wlan_device_name = &wlan_devices_list[wlan_device_name_index..]
-            .split_once("\n")
+            .split_once('\n')
             .unwrap()
             .0
-            .split_once(" ")
+            .split_once(' ')
             .unwrap()
             .1;
         let wlan_info = String::from_utf8(
@@ -49,7 +47,7 @@ impl NetworkInformation {
         let wlan_ssid: String;
         if let Some(wlan_ssid_index) = wlan_info.find("SSID") {
             wlan_ssid = wlan_info[wlan_ssid_index..]
-                .split_once("\n")
+                .split_once('\n')
                 .unwrap()
                 .0
                 .to_string();

@@ -42,7 +42,7 @@ impl MemoryUsage {
 
         // Could be improved by removing whitespace before iteration
         for character in str_to_parse.chars() {
-            if character.is_digit(10) {
+            if character.is_ascii_digit() {
                 resulting_string.push(character);
             }
         }
@@ -63,22 +63,20 @@ impl MemoryUsage {
 
         if let Some(memory_file) = read_file("/proc/meminfo") {
             let reader = BufReader::new(memory_file);
-            for line in reader.lines() {
-                if let Ok(line) = line {
-                    if line.starts_with("MemTotal") {
-                        // Convert to kb to gb
-                        memory_information.total_usable = self.get_int_from_str(line)?;
-                    } else if line.starts_with("MemAvailable") {
-                        memory_information.available = self.get_int_from_str(line)?;
-                    } else if line.starts_with("Buffers") {
-                        memory_information.buffers = self.get_int_from_str(line)?;
-                    } else if line.starts_with("MemFree") {
-                        memory_information.mem_free = self.get_int_from_str(line)?;
-                    } else if line.starts_with("Cached") {
-                        memory_information.cache = self.get_int_from_str(line)?;
-                    } else if line.starts_with("SReclaimable") {
-                        memory_information.reclaimable = self.get_int_from_str(line)?;
-                    }
+            for line in reader.lines().flatten() {
+                if line.starts_with("MemTotal") {
+                    // Convert to kb to gb
+                    memory_information.total_usable = self.get_int_from_str(line)?;
+                } else if line.starts_with("MemAvailable") {
+                    memory_information.available = self.get_int_from_str(line)?;
+                } else if line.starts_with("Buffers") {
+                    memory_information.buffers = self.get_int_from_str(line)?;
+                } else if line.starts_with("MemFree") {
+                    memory_information.mem_free = self.get_int_from_str(line)?;
+                } else if line.starts_with("Cached") {
+                    memory_information.cache = self.get_int_from_str(line)?;
+                } else if line.starts_with("SReclaimable") {
+                    memory_information.reclaimable = self.get_int_from_str(line)?;
                 }
             }
 
@@ -101,7 +99,7 @@ impl Widget for MemoryUsage {
     fn display_text(&self) -> Result<(String, TextColor), WidgetError> {
         match self.get_usage() {
             Ok(usage) => {
-                let color = if (usage.available / usage.total_usable * 100.0) > MEMORY_THRESHOLD {
+                let color = if (usage.used / usage.total_usable * 100.0) > MEMORY_THRESHOLD {
                     TextColor::Critical
                 } else {
                     TextColor::Neutral
@@ -116,7 +114,7 @@ impl Widget for MemoryUsage {
                     color,
                 ))
             }
-            Err(msg) => return Err(WidgetError::new(msg.to_string())),
+            Err(msg) => Err(WidgetError::new(msg.to_string())),
         }
     }
 }

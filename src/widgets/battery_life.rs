@@ -51,14 +51,14 @@ impl Battery {
                 // by the kernel and it should always look the same.
                 if unpacked_line.starts_with("POWER_SUPPLY_ENERGY_FULL") {
                     power_full = unpacked_line
-                        .split("=")
+                        .split('=')
                         .last()
                         .unwrap()
                         .parse::<f32>()
                         .unwrap();
                 } else if unpacked_line.starts_with("POWER_SUPPLY_ENERGY_NOW") {
                     power_now = unpacked_line
-                        .split("=")
+                        .split('=')
                         .last()
                         .unwrap()
                         .parse::<f32>()

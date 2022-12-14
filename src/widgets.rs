@@ -28,9 +28,7 @@ pub trait Widget {
 
         match self.display_text() {
             Ok((text, color)) => (full_text, text_color) = (text, color),
-            Err(error) => {
-                (full_text, text_color) = (String::from(error.error_message), TextColor::Critical)
-            }
+            Err(error) => (full_text, text_color) = (error.error_message, TextColor::Critical),
         }
 
         format!(

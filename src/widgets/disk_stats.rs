@@ -3,22 +3,37 @@ use std::mem;
 use std::path::Path;
 
 use libc::statvfs;
+use serde::Serialize;
+use serde_json::Value;
 
-use crate::config::TextColor;
+use crate::config::NEUTRAL;
+use crate::config::RED;
 use crate::utils::macros::cast_to_u64;
 use crate::widgets::Widget;
 use crate::widgets::WidgetError;
 
-const DISK_THRESHOLD: u64 = 20;
+const DISK_THRESHOLD: f64 = 20.0;
 
+#[derive(Serialize)]
 // A struct that holds a Map of all paths that we want to watch over
-pub struct Disk {
+pub struct Disk<'a> {
+    // Name of the widget
+    name: &'a str,
+    // Text that will be shown in the status bar
+    full_text: Option<String>,
+    // Color of the text
+    color: &'a str,
+    // Paths to watch
+    #[serde(skip_serializing)]
     path_to_watch: (String, String),
 }
 
-impl Disk {
+impl<'a> Disk<'a> {
     pub fn new(display_name: String, path: String) -> Self {
         Disk {
+            name: "disk",
+            full_text: None,
+            color: RED,
             path_to_watch: (display_name, path),
         }
     }
@@ -60,24 +75,28 @@ impl Disk {
     }
 }
 
-impl Widget for Disk {
+impl<'a> Widget for Disk<'a> {
     fn name(&self) -> &str {
-        "disk"
+        self.name
     }
 
-    fn display_text(&self) -> Result<(String, TextColor), WidgetError> {
+    fn update(&mut self) {
         // We need to borrow here because "String" does not implement the copy trait
         // and self is already borrowed. That means that we cannot move the "path_to_watch" variable
         // out of the shared reference because we don't own the reference.
         let (name, path) = &self.path_to_watch;
         let available_space = self.calulcate_available_disk_storage(Path::new(path));
         let total_space = self.get_total_disk_storage(Path::new(path));
-        let color = if (available_space / total_space * 100) > DISK_THRESHOLD {
-            TextColor::Critical
+        self.color = if (available_space as f64 / total_space as f64 * 100.0) < DISK_THRESHOLD {
+            RED
         } else {
-            TextColor::Neutral
+            NEUTRAL
         };
 
-        Ok((format!("{name}: {available_space} GiB"), color))
+        self.full_text = Some(format!("{name}: {available_space} GiB"));
+    }
+
+    fn display_text(&self) -> Result<Value, WidgetError> {
+        Ok(serde_json::to_value(self)?)
     }
 }

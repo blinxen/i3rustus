@@ -1,6 +1,11 @@
-use crate::config::TextColor;
+use serde::Serialize;
+use serde_json::Value;
+
+use crate::config::GREEN;
+use crate::config::RED;
 use crate::widgets::Widget;
 use crate::widgets::WidgetError;
+use crate::LOGGER;
 use std::process::Command;
 
 #[derive(PartialEq, Eq)]
@@ -9,13 +14,30 @@ pub enum NetworkType {
     Wlan,
 }
 
-pub struct NetworkInformation {
+#[derive(Serialize)]
+pub struct NetworkInformation<'a> {
+    // Name of the widget
+    name: &'a str,
+    // Text that will be shown in the status bar
+    full_text: Option<String>,
+    // Color of the text
+    color: &'a str,
+    #[serde(skip_serializing)]
     network_type: NetworkType,
+    #[serde(skip_serializing)]
+    // Holds the error message if an error occured during widget update
+    error: Option<String>,
 }
 
-impl NetworkInformation {
+impl<'a> NetworkInformation<'a> {
     pub fn new(network_type: NetworkType) -> Self {
-        NetworkInformation { network_type }
+        NetworkInformation {
+            name: "network",
+            full_text: None,
+            color: RED,
+            network_type,
+            error: None,
+        }
     }
 
     fn get_ethernet_information(&self) -> Result<String, WidgetError> {
@@ -58,24 +80,40 @@ impl NetworkInformation {
     }
 }
 
-impl Widget for NetworkInformation {
+impl<'a> Widget for NetworkInformation<'a> {
     fn name(&self) -> &str {
-        "network"
+        self.name
     }
 
-    fn display_text(&self) -> Result<(String, TextColor), WidgetError> {
-        let network_fn = if self.network_type == NetworkType::Ethernet {
-            NetworkInformation::get_ethernet_information
+    fn update(&mut self) {
+        // Depending on the network type, we call a different method
+        let network_information = if self.network_type == NetworkType::Ethernet {
+            self.get_ethernet_information()
         } else {
-            NetworkInformation::get_wlan_information
+            self.get_wlan_information()
         };
 
-        let network_information = network_fn(self)?;
-        let color = if network_information.contains("down") {
-            TextColor::Critical
-        } else {
-            TextColor::Good
-        };
-        Ok((network_information, color))
+        match network_information {
+            Ok(network_information) => {
+                self.color = if network_information.contains("down") {
+                    RED
+                } else {
+                    GREEN
+                };
+                self.full_text = Some(network_information);
+            }
+            Err(error) => self.error = Some(error.to_string()),
+        }
+    }
+
+    fn display_text(&self) -> Result<Value, WidgetError> {
+        if let Some(error_msg) = &self.error {
+            LOGGER.error(&format!(
+                "Error accured when trying to get network information.\n{}",
+                error_msg
+            ));
+        }
+
+        Ok(serde_json::to_value(self)?)
     }
 }

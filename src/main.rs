@@ -2,11 +2,8 @@ mod config;
 mod utils;
 mod widgets;
 
-use serde_json::{json, Value};
-use std::{thread, time};
-
+use config::I3Config;
 use log::LevelFilter;
-use utils::json::jsonify;
 use utils::logger::Logger;
 use widgets::battery_life::Battery;
 use widgets::cpu_stats::CpuUsage;
@@ -16,62 +13,10 @@ use widgets::memory_stats::MemoryUsage;
 use widgets::network_information::NetworkInformation;
 use widgets::network_information::NetworkType;
 use widgets::time::Time;
-use widgets::Widget;
 
 static LOGGER: Logger = Logger {
     log_file: "/var/log/i3rustus.log",
 };
-
-struct I3Config {
-    version: u8,
-    widgets: Vec<Box<dyn Widget>>,
-}
-
-impl I3Config {
-    fn version(&self) -> u8 {
-        self.version
-    }
-
-    fn widgets_config(&self) -> Value {
-        let mut config: Value = json!([]);
-
-        for widget in self.widgets.iter() {
-            let widget_config: Value = match jsonify::<String>(&(widget.to_json())) {
-                Ok(conf) => conf,
-                Err(error) => {
-                    LOGGER.warning(&format!(
-                        "Invalid config for {}: \n\tTried to convert `{}` to JSON\n\t{}",
-                        widget.name(),
-                        widget.to_json(),
-                        error
-                    ));
-                    continue;
-                }
-            };
-
-            // Is it OK to do an unwrap here?
-            config.as_array_mut().unwrap().push(widget_config);
-        }
-
-        config
-    }
-
-    fn init(&self) {
-        // This is the output that is read by i3
-        println!("{}", json!({"version": self.version()}));
-        // Begin endless array
-        println!("[");
-        // REMOVE ME: This is used to make the output simpler, but is ugly
-        // Arrays have to be separated by comma in output
-        println!("[]");
-        loop {
-            // The actual config for the status bar
-            println!(",{}", self.widgets_config());
-            // Wait 1 secs before printing update
-            thread::sleep(time::Duration::from_secs(1));
-        }
-    }
-}
 
 fn main() {
     // Set logger
@@ -79,21 +24,16 @@ fn main() {
         println!("Enable to set logger: {}", error);
     }
 
-    // Run each Widget in its own thread
-    // or at least make them async
-    let final_config = I3Config {
-        version: 1,
-        widgets: vec![
-            Box::new(NetworkInformation::new(NetworkType::Wlan)),
-            Box::new(NetworkInformation::new(NetworkType::Ethernet)),
-            Box::new(Battery::new()),
-            Box::new(CpuUsage::new(CpuUsageType::CpuLoad)),
-            Box::new(CpuUsage::new(CpuUsageType::Percentage)),
-            Box::new(MemoryUsage::new()),
-            Box::new(Disk::new(String::from("root"), String::from("/"))),
-            Box::new(Time::new()),
-        ],
-    };
+    let mut final_config = I3Config::new(vec![
+        Box::new(NetworkInformation::new(NetworkType::Wlan)),
+        Box::new(NetworkInformation::new(NetworkType::Ethernet)),
+        Box::new(Battery::new()),
+        Box::new(CpuUsage::new(CpuUsageType::CpuLoad)),
+        Box::new(CpuUsage::new(CpuUsageType::Percentage)),
+        Box::new(MemoryUsage::new()),
+        Box::new(Disk::new(String::from("root"), String::from("/"))),
+        Box::new(Time::new()),
+    ]);
 
     final_config.init();
 }

@@ -2,10 +2,15 @@ use std::io::BufRead;
 use std::io::BufReader;
 use std::num::ParseFloatError;
 
-use crate::config::TextColor;
+use serde::Serialize;
+use serde_json::Value;
+
+use crate::config::NEUTRAL;
+use crate::config::RED;
 use crate::utils::file::read_file;
 use crate::widgets::Widget;
 use crate::widgets::WidgetError;
+use crate::LOGGER;
 
 const MEMORY_THRESHOLD: f32 = 50.0;
 
@@ -28,11 +33,27 @@ struct MemoryInfromation {
     reclaimable: f32,
 }
 
-pub struct MemoryUsage {}
+#[derive(Serialize)]
+pub struct MemoryUsage<'a> {
+    // Name of the widget
+    name: &'a str,
+    // Text that will be shown in the status bar
+    full_text: Option<String>,
+    // Color of the text
+    color: &'a str,
+    #[serde(skip_serializing)]
+    // Holds the error message if an error occured during widget update
+    error: Option<String>,
+}
 
-impl MemoryUsage {
+impl<'a> MemoryUsage<'a> {
     pub fn new() -> Self {
-        MemoryUsage {}
+        MemoryUsage {
+            name: "memory",
+            full_text: None,
+            color: NEUTRAL,
+            error: None,
+        }
     }
 
     fn get_int_from_str(&self, str_to_parse: String) -> Result<f32, ParseFloatError> {
@@ -91,30 +112,38 @@ impl MemoryUsage {
     }
 }
 
-impl Widget for MemoryUsage {
+impl<'a> Widget for MemoryUsage<'a> {
     fn name(&self) -> &str {
-        "memory"
+        self.name
     }
 
-    fn display_text(&self) -> Result<(String, TextColor), WidgetError> {
+    fn update(&mut self) {
         match self.get_usage() {
             Ok(usage) => {
-                let color = if (usage.used / usage.total_usable * 100.0) > MEMORY_THRESHOLD {
-                    TextColor::Critical
+                self.color = if (usage.used / usage.total_usable * 100.0) > MEMORY_THRESHOLD {
+                    RED
                 } else {
-                    TextColor::Neutral
+                    NEUTRAL
                 };
-                Ok((
-                    format!(
-                        "RAM (GiB): U={used:.1} A={available:.1} / {total_usable:.1}",
-                        used = usage.used / 1024.0 / 1024.0,
-                        available = usage.available / 1024.0 / 1024.0,
-                        total_usable = usage.total_usable / 1024.0 / 1024.0
-                    ),
-                    color,
-                ))
+                self.full_text = Some(format!(
+                    "RAM (GiB): U={used:.1} A={available:.1} / {total_usable:.1}",
+                    used = usage.used / 1024.0 / 1024.0,
+                    available = usage.available / 1024.0 / 1024.0,
+                    total_usable = usage.total_usable / 1024.0 / 1024.0
+                ));
             }
-            Err(msg) => Err(WidgetError::new(msg.to_string())),
+            Err(error) => self.error = Some(error.to_string()),
         }
+    }
+
+    fn display_text(&self) -> Result<Value, WidgetError> {
+        if let Some(error_msg) = &self.error {
+            LOGGER.error(&format!(
+                "Error occured when calculating memory usage.\n{}",
+                error_msg
+            ));
+        }
+
+        Ok(serde_json::to_value(self)?)
     }
 }

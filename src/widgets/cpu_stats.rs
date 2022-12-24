@@ -1,12 +1,17 @@
-use crate::config::TextColor;
-use std::cell::Cell;
+use serde::Serialize;
+use serde_json::Value;
 
-use crate::utils::file::read_first_line_in_file;
+use crate::{
+    config::{NEUTRAL, RED},
+    utils::file::read_first_line_in_file,
+    LOGGER,
+};
 
 use super::{Widget, WidgetError};
 
 const CPU_USAGE_THRESHOLD: f32 = 30.0;
 
+#[derive(PartialEq, Eq)]
 pub enum CpuUsageType {
     // Show load
     CpuLoad,
@@ -14,34 +19,37 @@ pub enum CpuUsageType {
     Percentage,
 }
 
-pub struct CpuUsage {
+#[derive(Serialize)]
+pub struct CpuUsage<'a> {
+    // Name of the widget
+    name: &'a str,
+    // Text that will be shown in the status bar
+    full_text: Option<String>,
+    // Color of the text
+    color: &'a str,
+    #[serde(skip_serializing)]
     pub usage_type: CpuUsageType,
-    // We are using Cell here because we want to be able to change
-    // the value of last_idle_usage and last_total_usage.
-    // The problem here is that our trait "Widget", defines the function
-    // "display_text" with having a borrowed self reference and not a
-    // mutable self reference. Thus making it not possible to change the values
-    // of the struct. We also don't want to change the traits function signature
-    // just because of one widget.
-    // Solution --> interior mutability --> Cell (https://doc.rust-lang.org/book/ch15-05-interior-mutability.html)
-    // With this solution we can make a immutable value mutable again, but
-    // we have to ensure that at runtime we don't break the borrowing rules.
-    // Also we are using Cell instead of RefCell, because
-    // Cell is used for types that implement the Copy trait and we are using ints.
-    // RefCell would be an overkill here.
-    //
     // Last idle time of CPU
-    last_idle_usage: Cell<f32>,
+    #[serde(skip_serializing)]
+    last_idle_usage: f32,
     // Last total usage time of CPU (include idle time)
-    last_total_usage: Cell<f32>,
+    #[serde(skip_serializing)]
+    last_total_usage: f32,
+    #[serde(skip_serializing)]
+    // Holds the error message if an error occured during widget update
+    error: Option<String>,
 }
 
-impl CpuUsage {
-    pub fn new(usage_type: CpuUsageType) -> CpuUsage {
+impl<'a> CpuUsage<'a> {
+    pub fn new(usage_type: CpuUsageType) -> Self {
         CpuUsage {
             usage_type,
-            last_idle_usage: Cell::new(0.0),
-            last_total_usage: Cell::new(0.0),
+            last_idle_usage: 0.0,
+            last_total_usage: 0.0,
+            name: "cpu",
+            full_text: None,
+            color: RED,
+            error: None,
         }
     }
 
@@ -52,7 +60,7 @@ impl CpuUsage {
         Ok(format!("Load: {}", load.join(" ")))
     }
 
-    fn get_cpu_usage(&self) -> Result<f32, WidgetError> {
+    fn get_cpu_usage(&mut self) -> Result<f32, WidgetError> {
         let mut total: f32 = 0.0;
         let mut idle: f32 = 0.0;
 
@@ -68,31 +76,53 @@ impl CpuUsage {
             total += number_as_u32;
         }
 
-        let idle_delta = idle - self.last_idle_usage.replace(idle);
-        let total_delta = total - self.last_total_usage.replace(total);
+        let idle_delta = idle - self.last_idle_usage;
+        let total_delta = total - self.last_total_usage;
+
+        self.last_idle_usage = idle;
+        self.last_total_usage = total;
 
         Ok(100.0 * (1.0 - idle_delta / total_delta))
     }
 }
 
-impl Widget for CpuUsage {
+impl<'a> Widget for CpuUsage<'a> {
     fn name(&self) -> &str {
-        "cpu"
+        self.name
     }
 
-    fn display_text(&self) -> Result<(String, TextColor), WidgetError> {
-        match self.usage_type {
-            // TODO: Maybe parse the load and evaluate it?
-            CpuUsageType::CpuLoad => Ok((self.get_cpu_load()?, TextColor::Neutral)),
-            CpuUsageType::Percentage => {
-                let cpu_usage = self.get_cpu_usage()?;
-                let color = if cpu_usage > CPU_USAGE_THRESHOLD {
-                    TextColor::Critical
-                } else {
-                    TextColor::Neutral
-                };
-                Ok((format!("CPU: {:.0}%", cpu_usage), color))
+    fn update(&mut self) {
+        if self.usage_type == CpuUsageType::CpuLoad {
+            match self.get_cpu_load() {
+                Ok(load) => {
+                    self.full_text = Some(load);
+                    self.color = NEUTRAL;
+                }
+                Err(error) => self.error = Some(error.to_string()),
+            }
+        } else {
+            match self.get_cpu_usage() {
+                Ok(usage) => {
+                    self.full_text = Some(format!("CPU:{:.0}%", usage));
+                    self.color = if usage > CPU_USAGE_THRESHOLD {
+                        RED
+                    } else {
+                        NEUTRAL
+                    };
+                }
+                Err(error) => self.error = Some(error.to_string()),
             }
         }
+    }
+
+    fn display_text(&self) -> Result<Value, WidgetError> {
+        if let Some(error_msg) = &self.error {
+            LOGGER.error(&format!(
+                "Error occured when trying to get CPU stats.\n{}",
+                error_msg
+            ));
+        }
+
+        Ok(serde_json::to_value(self)?)
     }
 }

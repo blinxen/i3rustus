@@ -1,28 +1,41 @@
-use chrono::DateTime;
 use chrono::Local;
+use serde::Serialize;
+use serde_json::Value;
 
-use crate::config::TextColor;
+use crate::config::NEUTRAL;
 use crate::widgets::Widget;
 use crate::widgets::WidgetError;
 
-pub struct Time {}
+#[derive(Serialize)]
+pub struct Time<'a> {
+    // Name of the widget
+    name: &'a str,
+    // Text that will be shown in the status bar
+    full_text: Option<String>,
+    // Color of the text
+    color: &'a str,
+}
 
-impl Time {
+impl<'a> Time<'a> {
     pub fn new() -> Self {
-        Time {}
+        Time {
+            name: "time",
+            full_text: None,
+            color: NEUTRAL,
+        }
     }
 }
 
-impl Widget for Time {
+impl<'a> Widget for Time<'a> {
     fn name(&self) -> &str {
-        "time"
+        self.name
     }
 
-    fn display_text(&self) -> Result<(String, TextColor), WidgetError> {
-        let current_time: DateTime<Local> = Local::now();
-        Ok((
-            format!("{}", current_time.format("%d.%m.%Y %H:%M:%S")),
-            TextColor::Neutral,
-        ))
+    fn update(&mut self) {
+        self.full_text = Some(Local::now().format("%d.%m.%Y %H:%M:%S").to_string());
+    }
+
+    fn display_text(&self) -> Result<Value, WidgetError> {
+        Ok(serde_json::to_value(self)?)
     }
 }

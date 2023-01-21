@@ -42,11 +42,17 @@ pub struct CpuUsage<'a> {
 
 impl<'a> CpuUsage<'a> {
     pub fn new(usage_type: CpuUsageType) -> Self {
+        let name = if usage_type == CpuUsageType::CpuLoad {
+            "cpu_load"
+        } else {
+            "cpu_percentage"
+        };
+
         CpuUsage {
             usage_type,
             last_idle_usage: 0.0,
             last_total_usage: 0.0,
-            name: "cpu",
+            name,
             full_text: None,
             color: RED,
             error: None,

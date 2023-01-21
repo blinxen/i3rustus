@@ -31,8 +31,14 @@ pub struct NetworkInformation<'a> {
 
 impl<'a> NetworkInformation<'a> {
     pub fn new(network_type: NetworkType) -> Self {
+        let name = if network_type == NetworkType::Wlan {
+            "wireless"
+        } else {
+            "ethernet"
+        };
+
         NetworkInformation {
-            name: "network",
+            name,
             full_text: None,
             color: RED,
             network_type,

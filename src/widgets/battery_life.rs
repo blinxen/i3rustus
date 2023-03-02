@@ -2,7 +2,7 @@ use serde::Serialize;
 use serde_json::Value;
 
 use crate::{
-    config::{RED, NEUTRAL},
+    config::{NEUTRAL, RED},
     utils::file::{read_file, read_first_line_in_file},
     LOGGER,
 };

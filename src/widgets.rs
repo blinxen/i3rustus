@@ -39,7 +39,7 @@ impl WidgetError {
 
 impl fmt::Display for WidgetError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Woah, something bad happend!")
+        write!(f, "{}", self.error_message)
     }
 }
 
@@ -59,6 +59,18 @@ impl From<FromUtf8Error> for WidgetError {
 
 impl From<serde_json::Error> for WidgetError {
     fn from(item: serde_json::Error) -> Self {
+        WidgetError::new(item.to_string())
+    }
+}
+
+impl From<dbus::Error> for WidgetError {
+    fn from(item: dbus::Error) -> Self {
+        WidgetError::new(item.to_string())
+    }
+}
+
+impl From<&dbus::Error> for WidgetError {
+    fn from(item: &dbus::Error) -> Self {
         WidgetError::new(item.to_string())
     }
 }

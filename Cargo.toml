@@ -1,9 +1,10 @@
 [package]
 name = "i3rustus"
+author = "blinxen"
 version = "0.1.0"
 edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+license = "MIT"
+readme = "README.md"
 
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
@@ -11,3 +12,4 @@ serde_json = "1.0"
 chrono = "0.4.19"
 log = { version = "0.4.14", features = ["max_level_debug", "release_max_level_warn"] }
 libc = "0.2"
+dbus = "0.9.7"

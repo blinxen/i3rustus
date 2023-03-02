@@ -1,12 +1,21 @@
+use dbus::arg::PropMap;
+use dbus::arg::RefArg;
+use dbus::blocking::Connection;
+use dbus::Path;
 use serde::Serialize;
 use serde_json::Value;
 
 use crate::config::GREEN;
 use crate::config::RED;
+use crate::utils::nm_dbus;
 use crate::widgets::Widget;
 use crate::widgets::WidgetError;
 use crate::LOGGER;
-use std::process::Command;
+
+use std::collections::HashMap;
+
+static ETH_DEFAULT: &str = "E: down";
+static WIFI_DEFAULT: &str = "W: down";
 
 #[derive(PartialEq, Eq)]
 pub enum NetworkType {
@@ -17,7 +26,7 @@ pub enum NetworkType {
 #[derive(Serialize)]
 pub struct NetworkInformation<'a> {
     // Name of the widget
-    name: &'a str,
+    name: &'static str,
     // Text that will be shown in the status bar
     full_text: Option<String>,
     // Color of the text
@@ -27,6 +36,10 @@ pub struct NetworkInformation<'a> {
     #[serde(skip_serializing)]
     // Holds the error message if an error occured during widget update
     error: Option<String>,
+    #[serde(skip_serializing)]
+    dbus_connection: Result<Connection, dbus::Error>,
+    #[serde(skip_serializing)]
+    dbus_wifi_device_path: Result<Path<'static>, dbus::Error>,
 }
 
 impl<'a> NetworkInformation<'a> {
@@ -37,52 +50,110 @@ impl<'a> NetworkInformation<'a> {
             "ethernet"
         };
 
+        let dbus_connection = Connection::new_system();
+        let dbus_wifi_device_path = if let Ok(dbus_connection) = &dbus_connection {
+            nm_dbus::method_call(
+                dbus_connection,
+                &Path::new("/org/freedesktop/NetworkManager").unwrap(),
+                "org.freedesktop.NetworkManager",
+                "GetDeviceByIpIface",
+                ("wlp3s0",),
+            )
+        } else {
+            Err(dbus::Error::new_failed("Initial dBus connection failed!"))
+        };
+
         NetworkInformation {
             name,
             full_text: None,
             color: RED,
             network_type,
             error: None,
+            dbus_connection,
+            dbus_wifi_device_path,
         }
     }
 
     fn get_ethernet_information(&self) -> Result<String, WidgetError> {
-        Ok(String::from("E: down"))
+        Ok(ETH_DEFAULT.to_string())
     }
 
     fn get_wlan_information(&self) -> Result<String, WidgetError> {
-        // TODO: Use netfilter to get information instead of relying on 'iw'
-        // Information can also be found under /sys/class/net/<DEV>/uevent
-        let wlan_devices_list = String::from_utf8(Command::new("iw").arg("dev").output()?.stdout)?;
-        // Look for the index of the "Interface" substring
-        let wlan_device_name_index = wlan_devices_list.find("Interface ").unwrap();
-        // Example: wlp3s0
-        let wlan_device_name = &wlan_devices_list[wlan_device_name_index..]
-            .split_once('\n')
-            .unwrap()
-            .0
-            .split_once(' ')
-            .unwrap()
-            .1;
-        let wlan_info = String::from_utf8(
-            Command::new("iw")
-                .arg("dev")
-                .arg(wlan_device_name)
-                .arg("link")
-                .output()?
-                .stdout,
+        let connection: Path = nm_dbus::get_property(
+            self.dbus_connection.as_ref()?,
+            self.dbus_wifi_device_path.as_ref()?,
+            "org.freedesktop.NetworkManager.Device",
+            "ActiveConnection",
         )?;
-        let wlan_ssid: String;
-        if let Some(wlan_ssid_index) = wlan_info.find("SSID") {
-            wlan_ssid = wlan_info[wlan_ssid_index..]
-                .split_once('\n')
-                .unwrap()
-                .0
-                .to_string();
-        } else {
-            wlan_ssid = String::from("W: down");
+
+        if connection.to_string() == "/" {
+            return Ok(WIFI_DEFAULT.to_string());
         }
-        Ok(format!("W: ({})", wlan_ssid))
+
+        let state: u32 = nm_dbus::get_property(
+            self.dbus_connection.as_ref()?,
+            &connection,
+            "org.freedesktop.NetworkManager.Connection.Active",
+            "State",
+        )?;
+
+        // https://people.freedesktop.org/~lkundrak/nm-docs/nm-dbus-types.html#NMActiveConnectionState
+        if state != 1 && state != 2 {
+            return Ok(WIFI_DEFAULT.to_string());
+        }
+
+        // bitrate is in kilobits/second
+        let bitrate: u32 = nm_dbus::get_property(
+            self.dbus_connection.as_ref()?,
+            self.dbus_wifi_device_path.as_ref()?,
+            "org.freedesktop.NetworkManager.Device.Wireless",
+            "Bitrate",
+        )?;
+
+        let connection_object: Path = nm_dbus::get_property(
+            self.dbus_connection.as_ref()?,
+            &connection,
+            "org.freedesktop.NetworkManager.Connection.Active",
+            "Connection",
+        )?;
+
+        // FIXME: When disconnecting and then reconnecting to WIFI then this keeps
+        // return "/" as the object path, which makes no sense
+        let ip4_config: Path = nm_dbus::get_property(
+            self.dbus_connection.as_ref()?,
+            &connection,
+            "org.freedesktop.NetworkManager.Connection.Active",
+            "Ip4Config",
+        )?;
+
+        let connection_settings: HashMap<String, PropMap> = nm_dbus::method_call(
+            self.dbus_connection.as_ref()?,
+            &connection_object,
+            "org.freedesktop.NetworkManager.Settings.Connection",
+            "GetSettings",
+            (),
+        )?;
+
+        let wifi_ip: Vec<PropMap> = nm_dbus::get_property(
+            self.dbus_connection.as_ref()?,
+            &ip4_config,
+            "org.freedesktop.NetworkManager.IP4Config",
+            "AddressData",
+        )?;
+
+        Ok(format!(
+            "W: {} -> {} Mb/s => {}",
+            // We are very confident that this many unwraps are fine
+            connection_settings
+                .get("connection")
+                .unwrap()
+                .get("id")
+                .unwrap()
+                .as_str()
+                .unwrap(),
+            bitrate / 1024,
+            wifi_ip[0].get("address").unwrap().as_str().unwrap(),
+        ))
     }
 }
 
@@ -108,7 +179,11 @@ impl<'a> Widget for NetworkInformation<'a> {
                 };
                 self.full_text = Some(network_information);
             }
-            Err(error) => self.error = Some(error.to_string()),
+            Err(error) => {
+                self.error = Some(error.to_string());
+                self.color = RED;
+                self.full_text = Some(String::from("ERROR"));
+            }
         }
     }
 

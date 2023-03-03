@@ -248,7 +248,6 @@ impl<'a> Widget for NetworkInformation<'a> {
             Err(error) => {
                 self.error = Some(error.to_string());
                 self.color = RED;
-                self.full_text = Some(String::from("ERROR"));
             }
         }
     }

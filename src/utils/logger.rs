@@ -14,7 +14,6 @@ impl Log for Logger {
     }
 
     fn log(&self, record: &Record) {
-        println!("{:?}", self.file);
         if self.enabled(record.metadata()) && self.file.is_some() {
             // println!();
             self.file

@@ -163,6 +163,7 @@ impl<'a> Widget for NetworkInformation<'a> {
     }
 
     fn update(&mut self) {
+        self.error = None;
         // Depending on the network type, we call a different method
         let network_information = if self.network_type == NetworkType::Ethernet {
             self.get_ethernet_information()

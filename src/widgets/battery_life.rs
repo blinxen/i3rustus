@@ -99,6 +99,7 @@ impl<'a> Widget for Battery<'a> {
     }
 
     fn update(&mut self) {
+        self.error = None;
         let battery_state = self.get_battery_state();
         let battery_life = self.get_battery_life();
         // Very ugly, but match would not make this more beautiful

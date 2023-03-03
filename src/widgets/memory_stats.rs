@@ -118,6 +118,7 @@ impl<'a> Widget for MemoryUsage<'a> {
     }
 
     fn update(&mut self) {
+        self.error = None;
         match self.get_usage() {
             Ok(usage) => {
                 self.color = if (usage.used / usage.total_usable * 100.0) > MEMORY_THRESHOLD {

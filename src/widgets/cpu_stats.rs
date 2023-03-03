@@ -98,6 +98,7 @@ impl<'a> Widget for CpuUsage<'a> {
     }
 
     fn update(&mut self) {
+        self.error = None;
         if self.usage_type == CpuUsageType::CpuLoad {
             match self.get_cpu_load() {
                 Ok(load) => {

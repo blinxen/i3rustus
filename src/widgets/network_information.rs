@@ -124,6 +124,11 @@ impl<'a> NetworkInformation<'a> {
             bitrate = speed.trim().parse().unwrap();
         }
 
+        // The bitrate will be -1 if no connection is active
+        if bitrate == -1 {
+            return Ok(ETH_DEFAULT.to_string());
+        }
+
         let ip4_config: Path = nm_dbus::get_property(
             self.dbus_connection.as_ref()?,
             &connection,

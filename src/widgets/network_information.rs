@@ -190,7 +190,7 @@ impl<'a> Widget for NetworkInformation<'a> {
     fn display_text(&self) -> Result<Value, WidgetError> {
         if let Some(error_msg) = &self.error {
             LOGGER.error(&format!(
-                "Error accured when trying to get network information.\n{}",
+                "Error occured when trying to get network information.\n{}",
                 error_msg
             ));
         }

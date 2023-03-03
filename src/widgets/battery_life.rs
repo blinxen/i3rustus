@@ -60,8 +60,8 @@ impl<'a> Battery<'a> {
         let mut power_full: f32 = 0.0;
         let mut power_now: f32 = 0.0;
 
-        if let Some(memory_file) = read_file(BATTERY_STATS_PATH) {
-            let reader = BufReader::new(memory_file);
+        if let Some(battery_file) = read_file(BATTERY_STATS_PATH) {
+            let reader = BufReader::new(battery_file);
             for line in reader.lines() {
                 // TODO: Find a better solution for this
                 // Apparently `?` consumes `line`,

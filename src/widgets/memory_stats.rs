@@ -10,7 +10,6 @@ use crate::config::RED;
 use crate::utils::file::read_file;
 use crate::widgets::Widget;
 use crate::widgets::WidgetError;
-use crate::LOGGER;
 
 const MEMORY_THRESHOLD: f32 = 50.0;
 
@@ -139,10 +138,10 @@ impl<'a> Widget for MemoryUsage<'a> {
 
     fn display_text(&self) -> Result<Value, WidgetError> {
         if let Some(error_msg) = &self.error {
-            LOGGER.error(&format!(
+            log::error!(
                 "Error occured when calculating memory usage.\n{}",
                 error_msg
-            ));
+            );
         }
 
         Ok(serde_json::to_value(self)?)

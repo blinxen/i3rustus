@@ -1,7 +1,7 @@
 use serde_json::{json, Value};
 use std::{thread, time};
 
-use crate::{widgets::Widget, LOGGER};
+use crate::widgets::Widget;
 
 pub(crate) const GREEN: &str = "#08FF00";
 pub(crate) const RED: &str = "#FF0000";
@@ -24,11 +24,7 @@ impl I3Config {
             let widget_config = match widget.display_text() {
                 Ok(conf) => conf,
                 Err(error) => {
-                    LOGGER.warning(&format!(
-                        "Invalid config for {}: \n\t{}",
-                        widget.name(),
-                        error
-                    ));
+                    log::warn!("Invalid config for {}: \n\t{}", widget.name(), error);
                     continue;
                 }
             };

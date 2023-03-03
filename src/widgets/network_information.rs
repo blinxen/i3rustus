@@ -11,7 +11,6 @@ use crate::utils::file::read_first_line_in_file;
 use crate::utils::nm_dbus;
 use crate::widgets::Widget;
 use crate::widgets::WidgetError;
-use crate::LOGGER;
 
 use std::collections::HashMap;
 
@@ -256,10 +255,10 @@ impl<'a> Widget for NetworkInformation<'a> {
 
     fn display_text(&self) -> Result<Value, WidgetError> {
         if let Some(error_msg) = &self.error {
-            LOGGER.error(&format!(
+            log::error!(
                 "Error occured when trying to get network information.\n{}",
                 error_msg
-            ));
+            );
         }
 
         Ok(serde_json::to_value(self)?)

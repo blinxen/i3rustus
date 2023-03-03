@@ -4,7 +4,6 @@ use serde_json::Value;
 use crate::{
     config::{NEUTRAL, RED},
     utils::file::{read_file, read_first_line_in_file},
-    LOGGER,
 };
 
 use super::{Widget, WidgetError};
@@ -119,10 +118,10 @@ impl<'a> Widget for Battery<'a> {
 
     fn display_text(&self) -> Result<Value, WidgetError> {
         if let Some(error_msg) = &self.error {
-            LOGGER.error(&format!(
+            log::error!(
                 "Error occured when trying to get battery life.\n{}",
                 error_msg
-            ));
+            );
         }
 
         Ok(serde_json::to_value(self)?)

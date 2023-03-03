@@ -1,58 +1,40 @@
-// Inspired by from https://docs.rs/log/latest/log/
 use log::{Level, Log, Metadata, Record};
+use std::{
+    fs::{File, OpenOptions},
+    io::Write,
+};
 
-pub struct Logger<'a> {
-    pub log_file: &'a str,
+pub struct Logger {
+    pub file: Option<File>,
 }
 
-impl Log for Logger<'_> {
+impl Log for Logger {
     fn enabled(&self, metadata: &Metadata) -> bool {
         metadata.level() <= Level::Info
     }
 
     fn log(&self, record: &Record) {
-        if self.enabled(record.metadata()) {
-            println!("{} - {}", record.level(), record.args());
+        println!("{:?}", self.file);
+        if self.enabled(record.metadata()) && self.file.is_some() {
+            // println!();
+            self.file
+                .as_ref()
+                .unwrap()
+                .write(format!("{} - {}\n", record.level(), record.args()).as_bytes());
         }
     }
 
     fn flush(&self) {}
 }
 
-impl Logger<'_> {
-    pub fn info(&self, log_text: &str) {
-        self.log(
-            &Record::builder()
-                .args(format_args!("{}", log_text))
-                .level(Level::Info)
-                .target("i3rustus")
-                .file(Some(self.log_file))
-                .line(Some(144))
-                .build(),
-        );
-    }
-
-    pub fn warning(&self, log_text: &str) {
-        self.log(
-            &Record::builder()
-                .args(format_args!("{}", log_text))
-                .level(Level::Warn)
-                .target("i3rustus")
-                .file(Some(self.log_file))
-                .line(Some(144))
-                .build(),
-        );
-    }
-
-    pub fn error(&self, log_text: &str) {
-        self.log(
-            &Record::builder()
-                .args(format_args!("{}", log_text))
-                .level(Level::Error)
-                .target("i3rustus")
-                .file(Some(self.log_file))
-                .line(Some(144))
-                .build(),
-        );
+impl Logger {
+    pub fn new() -> Box<Self> {
+        Box::new(Self {
+            file: OpenOptions::new()
+                .create(true)
+                .append(true)
+                .open("/var/log/i3rustus.log")
+                .ok(),
+        })
     }
 }

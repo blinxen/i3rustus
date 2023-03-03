@@ -14,13 +14,12 @@ use widgets::network_information::NetworkInformation;
 use widgets::network_information::NetworkType;
 use widgets::time::Time;
 
-static LOGGER: Logger = Logger {
-    log_file: "/var/log/i3rustus.log",
-};
-
 fn main() {
     // Set logger
-    if let Err(error) = log::set_logger(&LOGGER).map(|()| log::set_max_level(LevelFilter::Error)) {
+    let logger = Logger::new();
+    if let Err(error) =
+        log::set_boxed_logger(logger).map(|()| log::set_max_level(LevelFilter::Error))
+    {
         println!("Enable to set logger: {}", error);
     }
 

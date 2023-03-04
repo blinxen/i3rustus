@@ -11,7 +11,7 @@ use crate::utils::file::read_file;
 use crate::widgets::Widget;
 use crate::widgets::WidgetError;
 
-const MEMORY_THRESHOLD: f32 = 50.0;
+const MEMORY_THRESHOLD: f32 = 25.0;
 
 #[derive(Debug)]
 struct MemoryInfromation {

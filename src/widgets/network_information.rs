@@ -144,7 +144,7 @@ impl<'a> NetworkInformation<'a> {
         )?;
 
         Ok(format!(
-            "E: S= {} Mb/s => {}",
+            "E: S={} Mb/s => {}",
             bitrate,
             eth_ip[0].get("address").unwrap().as_str().unwrap(),
         ))
@@ -212,7 +212,7 @@ impl<'a> NetworkInformation<'a> {
         )?;
 
         Ok(format!(
-            "W: {} S= {} Mb/s => {}",
+            "W: SSID={} S={} Mb/s => {}",
             // We are very confident that this many unwraps are fine
             connection_settings
                 .get("connection")

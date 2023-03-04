@@ -62,7 +62,7 @@ impl<'a> CpuUsage<'a> {
         let load_avg = read_first_line_in_file("/proc/loadavg")?;
         // We only want the the load and not the
         let load = &load_avg.split_whitespace().collect::<Vec<&str>>()[0..3];
-        Ok(format!("Load: {}", load.join(" ")))
+        Ok(format!("Load: {}", load.join(", ")))
     }
 
     fn get_cpu_usage(&mut self) -> Result<f32, WidgetError> {

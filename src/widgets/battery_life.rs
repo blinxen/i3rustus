@@ -107,6 +107,8 @@ impl<'a> Widget for Battery<'a> {
                 self.full_text = Some(format!("{} BAT {:.2}%", battery_state, battery_life));
                 if battery_life <= BATTERY_THRESHOLD {
                     self.color = RED;
+                } else {
+                    self.color = NEUTRAL
                 }
             } else {
                 self.error = Some(battery_life.err().unwrap().to_string());

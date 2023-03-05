@@ -2,7 +2,7 @@ use serde::Serialize;
 use serde_json::Value;
 
 use crate::{
-    config::{NEUTRAL, RED},
+    config::{NEUTRAL, RED, GREEN, YELLOW},
     utils::file::{read_file, read_first_line_in_file},
 };
 
@@ -11,7 +11,8 @@ use std::io::{BufRead, BufReader, Error};
 
 const BATTERY_STATUS_PATH: &str = "/sys/class/power_supply/BAT0/status";
 const BATTERY_STATS_PATH: &str = "/sys/class/power_supply/BAT0/uevent";
-const BATTERY_THRESHOLD: f32 = 20.0;
+const BATTERY_LOWER_THRESHOLD: f32 = 20.0;
+const BATTERY_UPPER_THRESHOLD: f32 = 80.0;
 
 #[derive(Serialize)]
 pub struct Battery<'a> {
@@ -105,11 +106,12 @@ impl<'a> Widget for Battery<'a> {
         if let Ok(battery_state) = battery_state {
             if let Ok(battery_life) = battery_life {
                 self.full_text = Some(format!("{} BAT {:.2}%", battery_state, battery_life));
-                if battery_life <= BATTERY_THRESHOLD {
-                    self.color = RED;
-                } else {
-                    self.color = NEUTRAL
-                }
+                // See https://github.com/rust-lang/rust/issues/41620#issuecomment-314345874
+                self.color = match battery_life {
+                    x if x <= BATTERY_LOWER_THRESHOLD => RED,
+                    x if x >= BATTERY_UPPER_THRESHOLD => YELLOW,
+                    _ => GREEN,
+                };
             } else {
                 self.error = Some(battery_life.err().unwrap().to_string());
             }

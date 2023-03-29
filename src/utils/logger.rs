@@ -19,7 +19,8 @@ impl Log for Logger {
             self.file
                 .as_ref()
                 .unwrap()
-                .write(format!("{} - {}\n", record.level(), record.args()).as_bytes());
+                .write_all(format!("{} - {}\n", record.level(), record.args()).as_bytes())
+                .expect("Could not write to log file");
         }
     }
 

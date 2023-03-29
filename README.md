@@ -5,3 +5,8 @@ The goal is that I replace i3status with this and build custom tools that are no
 
 This project is not intended for other people to use. It's one of my rust learning projects,
 where I am getting to know rust better.
+
+## Requirements
+
+- dbus
+- NetworkManager

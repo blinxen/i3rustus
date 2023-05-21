@@ -1,5 +1,6 @@
 mod config;
 mod utils;
+mod widget_executor;
 mod widgets;
 
 use config::I3Config;
@@ -14,7 +15,8 @@ use widgets::network_information::NetworkInformation;
 use widgets::network_information::NetworkType;
 use widgets::time::Time;
 
-fn main() {
+#[actix_rt::main]
+async fn main() {
     // Set logger
     let logger = Logger::new();
     if let Err(error) =
@@ -34,5 +36,5 @@ fn main() {
         Box::new(Time::new()),
     ]);
 
-    final_config.init();
+    final_config.init().await;
 }

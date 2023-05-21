@@ -1,9 +1,10 @@
 mod config;
+mod i3_status;
 mod utils;
 mod widget_executor;
 mod widgets;
 
-use config::I3Config;
+use i3_status::I3Status;
 use log::LevelFilter;
 use utils::logger::Logger;
 use widgets::battery_life::Battery;
@@ -25,7 +26,7 @@ async fn main() {
         println!("Enable to set logger: {}", error);
     }
 
-    let mut final_config = I3Config::new(vec![
+    let mut i3status = I3Status::new(vec![
         Box::new(NetworkInformation::new(NetworkType::Wlan)),
         Box::new(NetworkInformation::new(NetworkType::Ethernet)),
         Box::new(Battery::new()),
@@ -36,5 +37,5 @@ async fn main() {
         Box::new(Time::new()),
     ]);
 
-    final_config.init().await;
+    i3status.init().await;
 }

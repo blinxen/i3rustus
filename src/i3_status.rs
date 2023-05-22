@@ -1,18 +1,20 @@
-use actix::{Actor, Addr};
-use serde_json::{json, Value};
-use std::{thread, time};
 use crate::{
+    config::Config,
     widget_executor::{UpdateWidgetValue, WidgetExecutor, WidgetValue},
     widgets::Widget,
 };
+use actix::{Actor, Addr};
+use serde_json::{json, Value};
 use std::collections::HashMap;
+use std::{thread, time};
 
 pub struct I3Status {
+    config: Config,
     widget_executors: HashMap<String, Addr<WidgetExecutor>>,
 }
 
 impl I3Status {
-    pub fn new(widgets: Vec<Box<dyn Widget>>) -> Self {
+    pub fn new(config: Config, widgets: Vec<Box<dyn Widget>>) -> Self {
         let mut executors = HashMap::new();
 
         for widget in widgets {
@@ -24,14 +26,22 @@ impl I3Status {
         }
 
         I3Status {
+            config,
             widget_executors: executors,
         }
     }
 
     async fn widget_values(&self) -> Value {
         let mut values = json!([]);
-        for (widget_name, executor) in self.widget_executors.iter() {
-            match executor.send(WidgetValue {}).await {
+        // Make sure widgets are printed in the correct order
+        for widget_name in self.config.widget_order() {
+            match self
+                .widget_executors
+                .get(&widget_name)
+                .expect("ERROR: Unknown widget name")
+                .send(WidgetValue {})
+                .await
+            {
                 Ok(Ok(conf)) => values
                     .as_array_mut()
                     .expect("ERROR: Could not get a mutable Vec from serde JSON")

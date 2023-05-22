@@ -4,6 +4,7 @@ mod utils;
 mod widget_executor;
 mod widgets;
 
+use config::Config;
 use i3_status::I3Status;
 use log::LevelFilter;
 use utils::logger::Logger;
@@ -26,16 +27,21 @@ async fn main() {
         println!("Enable to set logger: {}", error);
     }
 
-    let mut i3status = I3Status::new(vec![
-        Box::new(NetworkInformation::new(NetworkType::Wlan)),
-        Box::new(NetworkInformation::new(NetworkType::Ethernet)),
-        Box::new(Battery::new()),
-        Box::new(CpuUsage::new(CpuUsageType::CpuLoad)),
-        Box::new(CpuUsage::new(CpuUsageType::Percentage)),
-        Box::new(MemoryUsage::new()),
-        Box::new(Disk::new(String::from("root"), String::from("/"))),
-        Box::new(Time::new()),
-    ]);
+    let config = Config::new();
+
+    let mut i3status = I3Status::new(
+        config,
+        vec![
+            Box::new(NetworkInformation::new(NetworkType::Wlan)),
+            Box::new(NetworkInformation::new(NetworkType::Ethernet)),
+            Box::new(Battery::new()),
+            Box::new(CpuUsage::new(CpuUsageType::CpuLoad)),
+            Box::new(CpuUsage::new(CpuUsageType::Percentage)),
+            Box::new(MemoryUsage::new()),
+            Box::new(Disk::new(String::from("root"), String::from("/"))),
+            Box::new(Time::new()),
+        ],
+    );
 
     i3status.init().await;
 }

@@ -1,6 +1,6 @@
 [package]
 name = "i3rustus"
-author = "blinxen"
+authors = ["blinxen <h-k-81@hotmail.com>"]
 version = "0.1.0"
 edition = "2021"
 license = "MIT"

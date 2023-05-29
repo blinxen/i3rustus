@@ -31,7 +31,7 @@ pub struct Battery<'a> {
 
 impl<'a> Battery<'a> {
     pub fn new(device_name: String) -> Self {
-        Battery {
+        Self {
             name: "battery",
             full_text: None,
             color: NEUTRAL,

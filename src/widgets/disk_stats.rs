@@ -30,7 +30,7 @@ pub struct Disk<'a> {
 
 impl<'a> Disk<'a> {
     pub fn new(display_name: String, path: String) -> Self {
-        Disk {
+        Self {
             name: "disk",
             full_text: None,
             color: RED,

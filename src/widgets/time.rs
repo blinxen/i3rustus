@@ -18,7 +18,7 @@ pub struct Time<'a> {
 
 impl<'a> Time<'a> {
     pub fn new() -> Self {
-        Time {
+        Self {
             name: "time",
             full_text: None,
             color: NEUTRAL,

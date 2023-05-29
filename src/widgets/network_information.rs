@@ -79,7 +79,7 @@ impl<'a> NetworkInformation<'a> {
             Err(dbus::Error::new_failed("Initial dBus connection failed!"))
         };
 
-        NetworkInformation {
+        Self {
             name,
             full_text: None,
             color: RED,

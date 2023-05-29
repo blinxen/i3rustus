@@ -24,7 +24,7 @@ impl I3Status {
             );
         }
 
-        I3Status {
+        Self {
             widget_order,
             widget_executors: executors,
         }

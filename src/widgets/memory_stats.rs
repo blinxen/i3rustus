@@ -47,7 +47,7 @@ pub struct MemoryUsage<'a> {
 
 impl<'a> MemoryUsage<'a> {
     pub fn new() -> Self {
-        MemoryUsage {
+        Self {
             name: "memory",
             full_text: None,
             color: NEUTRAL,

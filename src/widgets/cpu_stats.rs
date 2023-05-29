@@ -47,7 +47,7 @@ impl<'a> CpuUsage<'a> {
             "cpu_percentage"
         };
 
-        CpuUsage {
+        Self {
             usage_type,
             last_idle_usage: 0.0,
             last_total_usage: 0.0,

@@ -2,7 +2,7 @@ use serde::Serialize;
 use serde_json::Value;
 
 use crate::{
-    config::{GREEN, NEUTRAL, RED, YELLOW},
+    config::{GREEN, NEUTRAL, RED, YELLOW_WARNING},
     utils::file::{read_file, read_first_line_in_file},
 };
 
@@ -114,7 +114,7 @@ impl<'a> Widget for Battery<'a> {
                 // See https://github.com/rust-lang/rust/issues/41620#issuecomment-314345874
                 self.color = match battery_life {
                     x if x <= BATTERY_LOWER_THRESHOLD => RED,
-                    x if x >= BATTERY_UPPER_THRESHOLD => YELLOW,
+                    x if x >= BATTERY_UPPER_THRESHOLD => YELLOW_WARNING,
                     _ => GREEN,
                 };
             } else {

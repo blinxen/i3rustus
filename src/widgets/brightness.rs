@@ -1,5 +1,5 @@
 use crate::widgets::{Widget, WidgetError};
-use crate::{config::NEUTRAL, utils::file::read_first_line_in_file};
+use crate::{config::YELLOW, utils::file::read_first_line_in_file};
 use serde::Serialize;
 use serde_json::Value;
 
@@ -23,7 +23,7 @@ impl<'a> Brightness<'a> {
         Self {
             name: "brightness",
             full_text: None,
-            color: NEUTRAL,
+            color: YELLOW,
             device_name,
         }
     }
@@ -49,10 +49,13 @@ impl<'a> Widget for Brightness<'a> {
         .unwrap()
         .parse::<f32>()
         .unwrap();
+
         self.full_text = Some(
-            (actual_brightness / max_brightness * 100.0)
-                .round()
-                .to_string(),
+            String::from("☼: ")
+                + &(actual_brightness / max_brightness * 100.0)
+                    .round()
+                    .to_string()
+                + "%",
         );
     }
 

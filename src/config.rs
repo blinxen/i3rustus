@@ -15,6 +15,7 @@ impl Config {
             "wireless".to_string(),
             "ethernet".to_string(),
             "battery".to_string(),
+            "brightness".to_string(),
             "cpu_load".to_string(),
             "cpu_percentage".to_string(),
             "memory".to_string(),

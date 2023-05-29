@@ -11,5 +11,7 @@ pub fn read_first_line_in_file(path: &str) -> Result<String, Error> {
     let file: Result<File, Error> = OpenOptions::new().read(true).open(path);
 
     BufReader::new(file?).read_line(&mut first_line)?;
+    // Delete the newline character at the end of the file because we don't need it
+    first_line.pop();
     Ok(first_line)
 }

@@ -9,6 +9,7 @@ use i3_status::I3Status;
 use log::LevelFilter;
 use utils::logger::Logger;
 use widgets::battery_life::Battery;
+use widgets::brightness::Brightness;
 use widgets::cpu_stats::CpuUsage;
 use widgets::cpu_stats::CpuUsageType;
 use widgets::disk_stats::Disk;
@@ -40,6 +41,7 @@ async fn main() {
             Box::new(MemoryUsage::new()),
             Box::new(Disk::new(String::from("root"), String::from("/"))),
             Box::new(Time::new()),
+            Box::new(Brightness::new()),
         ],
     );
 

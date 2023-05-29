@@ -6,6 +6,7 @@ use std::io;
 use std::string::FromUtf8Error;
 
 pub mod battery_life;
+pub mod brightness;
 pub mod cpu_stats;
 pub mod disk_stats;
 pub mod memory_stats;

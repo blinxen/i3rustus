@@ -9,8 +9,7 @@ use crate::{
 use super::{Widget, WidgetError};
 use std::io::{BufRead, BufReader, Error};
 
-const BATTERY_STATUS_PATH: &str = "/sys/class/power_supply/BAT0/status";
-const BATTERY_STATS_PATH: &str = "/sys/class/power_supply/BAT0/uevent";
+const BATTERY_PATH: &str = "/sys/class/power_supply";
 const BATTERY_LOWER_THRESHOLD: f32 = 20.0;
 const BATTERY_UPPER_THRESHOLD: f32 = 80.0;
 
@@ -25,15 +24,19 @@ pub struct Battery<'a> {
     #[serde(skip_serializing)]
     // Holds the error message if an error occured during widget update
     error: Option<String>,
+    #[serde(skip_serializing)]
+    // Device name of the power supply
+    device_name: String,
 }
 
 impl<'a> Battery<'a> {
-    pub fn new() -> Self {
+    pub fn new(device_name: String) -> Self {
         Battery {
             name: "battery",
             full_text: None,
             color: NEUTRAL,
             error: None,
+            device_name,
         }
     }
 
@@ -43,7 +46,7 @@ impl<'a> Battery<'a> {
     // Battery full ☻
     // State unknown ?
     fn get_battery_state(&self) -> Result<String, Error> {
-        match read_first_line_in_file(BATTERY_STATUS_PATH)?
+        match read_first_line_in_file(&format!("{}/{}/status", BATTERY_PATH, self.device_name))?
             .as_str()
             .trim()
         {
@@ -60,7 +63,9 @@ impl<'a> Battery<'a> {
         let mut power_full: f32 = 0.0;
         let mut power_now: f32 = 0.0;
 
-        if let Some(battery_file) = read_file(BATTERY_STATS_PATH) {
+        if let Some(battery_file) =
+            read_file(&format!("{}/{}/uevent", BATTERY_PATH, self.device_name))
+        {
             let reader = BufReader::new(battery_file);
             for line in reader.lines() {
                 // TODO: Find a better solution for this

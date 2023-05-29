@@ -10,6 +10,14 @@ impl Config {
         Config {}
     }
 
+    pub fn battery_device_name(&self) -> String {
+        String::from("BAT0")
+    }
+
+    pub fn brightness_device_name(&self) -> String {
+        String::from("amdgpu_bl1")
+    }
+
     pub fn widget_order(&self) -> Vec<String> {
         vec![
             "wireless".to_string(),

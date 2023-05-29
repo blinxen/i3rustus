@@ -1,5 +1,4 @@
 use crate::{
-    config::Config,
     widget_executor::{UpdateWidgetValue, WidgetExecutor, WidgetValue},
     widgets::Widget,
 };
@@ -9,12 +8,12 @@ use std::collections::HashMap;
 use std::{thread, time};
 
 pub struct I3Status {
-    config: Config,
+    widget_order: Vec<String>,
     widget_executors: HashMap<String, Addr<WidgetExecutor>>,
 }
 
 impl I3Status {
-    pub fn new(config: Config, widgets: Vec<Box<dyn Widget>>) -> Self {
+    pub fn new(widget_order: Vec<String>, widgets: Vec<Box<dyn Widget>>) -> Self {
         let mut executors = HashMap::new();
 
         for widget in widgets {
@@ -26,7 +25,7 @@ impl I3Status {
         }
 
         I3Status {
-            config,
+            widget_order,
             widget_executors: executors,
         }
     }
@@ -34,10 +33,10 @@ impl I3Status {
     async fn widget_values(&self) -> Value {
         let mut values = json!([]);
         // Make sure widgets are printed in the correct order
-        for widget_name in self.config.widget_order() {
+        for widget_name in self.widget_order.iter() {
             match self
                 .widget_executors
-                .get(&widget_name)
+                .get(widget_name)
                 .expect("ERROR: Unknown widget name")
                 .send(WidgetValue {})
                 .await

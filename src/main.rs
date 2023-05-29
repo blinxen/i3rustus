@@ -31,17 +31,17 @@ async fn main() {
     let config = Config::new();
 
     let mut i3status = I3Status::new(
-        config,
+        config.widget_order(),
         vec![
             Box::new(NetworkInformation::new(NetworkType::Wlan)),
             Box::new(NetworkInformation::new(NetworkType::Ethernet)),
-            Box::new(Battery::new()),
+            Box::new(Battery::new(config.battery_device_name())),
             Box::new(CpuUsage::new(CpuUsageType::CpuLoad)),
             Box::new(CpuUsage::new(CpuUsageType::Percentage)),
             Box::new(MemoryUsage::new()),
             Box::new(Disk::new(String::from("root"), String::from("/"))),
             Box::new(Time::new()),
-            Box::new(Brightness::new()),
+            Box::new(Brightness::new(config.brightness_device_name())),
         ],
     );
 

@@ -6,7 +6,7 @@ use crate::{
     utils::file::{read_file, read_first_line_in_file},
 };
 
-use super::{Widget, WidgetError};
+use crate::widgets::{Widget, WidgetError};
 use std::io::{BufRead, BufReader, Error};
 
 const BATTERY_PATH: &str = "/sys/class/power_supply";

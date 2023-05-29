@@ -6,7 +6,7 @@ use crate::{
     utils::file::read_first_line_in_file,
 };
 
-use super::{Widget, WidgetError};
+use crate::widgets::{Widget, WidgetError};
 
 const CPU_USAGE_THRESHOLD: f32 = 30.0;
 

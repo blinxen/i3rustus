@@ -1,4 +1,4 @@
-use super::{Widget, WidgetError};
+use crate::widgets::{Widget, WidgetError};
 use crate::{config::NEUTRAL, utils::file::read_first_line_in_file};
 use serde::Serialize;
 use serde_json::Value;

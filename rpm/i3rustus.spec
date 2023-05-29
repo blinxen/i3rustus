@@ -2,7 +2,7 @@
 %bcond_with check
 
 Name:           i3rustus
-Version:        0.1.0
+Version:        0.2.0
 Release:        1%{?dist}
 Summary:        Lightweight implementation of i3status in rust
 # Apache-2.0 OR BSL-1.0
@@ -45,5 +45,10 @@ Lightweight implementation of i3status in rust
 %endif
 
 %changelog
+* Mon May 29 2023 blinxen <h-k-81@hotmail.com> - 0.2.0-1
+- Update to version 0.2.0
+- Add brightness indicator widget
+- Small code cleanup
+- First steps towards making i3rustus configurable
 * Mon May 22 2023 blinxen <h-k-81@hotmail.com> - 0.1.0-1
 - Initial package

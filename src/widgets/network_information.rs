@@ -31,7 +31,7 @@ pub struct NetworkInformation<'a> {
     // Name of the widget
     name: &'static str,
     // Text that will be shown in the status bar
-    full_text: Option<String>,
+    full_text: String,
     // Color of the text
     color: &'a str,
     #[serde(skip_serializing)]
@@ -78,10 +78,15 @@ impl<'a> NetworkInformation<'a> {
         } else {
             Err(dbus::Error::new_failed("Initial dBus connection failed!"))
         };
+        let default_full_text = if network_type == NetworkType::Wlan {
+            WIFI_DEFAULT
+        } else {
+            ETH_DEFAULT
+        };
 
         Self {
             name,
-            full_text: None,
+            full_text: default_full_text.to_string(),
             color: RED,
             network_type,
             error: None,
@@ -248,7 +253,7 @@ impl<'a> Widget for NetworkInformation<'a> {
                 } else {
                     GREEN
                 };
-                self.full_text = Some(network_information);
+                self.full_text = network_information;
             }
             Err(error) => {
                 self.error = Some(error.to_string());

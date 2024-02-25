@@ -1,18 +1,11 @@
-use dbus::arg::PropMap;
-use dbus::arg::RefArg;
-use dbus::blocking::Connection;
-use dbus::Path;
 use serde::Serialize;
 use serde_json::Value;
 
 use crate::config::GREEN;
 use crate::config::RED;
-use crate::utils::file::read_first_line_in_file;
-use crate::utils::nm_dbus;
+use crate::netlink::Netlink;
 use crate::widgets::Widget;
 use crate::widgets::WidgetError;
-
-use std::collections::HashMap;
 
 static WIFI_DEVICE_NAME: &str = "wlp3s0";
 static ETH_DEVICE_NAME: &str = "enp5s0";
@@ -40,11 +33,9 @@ pub struct NetworkInformation<'a> {
     // Holds the error message if an error occured during widget update
     error: Option<String>,
     #[serde(skip_serializing)]
-    dbus_connection: Result<Connection, dbus::Error>,
+    netlink: Result<Netlink, std::io::Error>,
     #[serde(skip_serializing)]
-    dbus_wifi_device_path: Result<Path<'static>, dbus::Error>,
-    #[serde(skip_serializing)]
-    dbus_eth_device_path: Result<Path<'static>, dbus::Error>,
+    default_full_text: String,
 }
 
 impl<'a> NetworkInformation<'a> {
@@ -55,29 +46,6 @@ impl<'a> NetworkInformation<'a> {
             "ethernet"
         };
 
-        let dbus_connection = Connection::new_system();
-        let dbus_wifi_device_path = if let Ok(dbus_connection) = &dbus_connection {
-            nm_dbus::method_call(
-                dbus_connection,
-                &Path::new("/org/freedesktop/NetworkManager").unwrap(),
-                "org.freedesktop.NetworkManager",
-                "GetDeviceByIpIface",
-                (WIFI_DEVICE_NAME,),
-            )
-        } else {
-            Err(dbus::Error::new_failed("Initial dBus connection failed!"))
-        };
-        let dbus_eth_device_path = if let Ok(dbus_connection) = &dbus_connection {
-            nm_dbus::method_call(
-                dbus_connection,
-                &Path::new("/org/freedesktop/NetworkManager").unwrap(),
-                "org.freedesktop.NetworkManager",
-                "GetDeviceByIpIface",
-                (ETH_DEVICE_NAME,),
-            )
-        } else {
-            Err(dbus::Error::new_failed("Initial dBus connection failed!"))
-        };
         let default_full_text = if network_type == NetworkType::Wlan {
             WIFI_DEFAULT
         } else {
@@ -90,145 +58,54 @@ impl<'a> NetworkInformation<'a> {
             color: RED,
             network_type,
             error: None,
-            dbus_connection,
-            dbus_wifi_device_path,
-            dbus_eth_device_path,
+            netlink: Netlink::new(),
+            default_full_text: default_full_text.to_string(),
         }
     }
 
     fn get_ethernet_information(&self) -> Result<String, WidgetError> {
-        let connection: Path = nm_dbus::get_property(
-            self.dbus_connection.as_ref()?,
-            self.dbus_eth_device_path.as_ref()?,
-            "org.freedesktop.NetworkManager.Device",
-            "ActiveConnection",
-        )?;
-
-        if connection.to_string() == "/" {
-            return Ok(ETH_DEFAULT.to_string());
+        if let Ok(netlink) = self.netlink.as_ref() {
+            let interface = netlink.interface_information(ETH_DEVICE_NAME)?;
+            if interface.ip.is_empty() {
+                Ok(self.default_full_text.to_string())
+            } else {
+                Ok(format!(
+                    "E: {}",
+                    if interface.ip.is_empty() {
+                        String::from("????")
+                    } else {
+                        interface.ip
+                    },
+                ))
+            }
+        } else {
+            Err(WidgetError::new("Netlink socket error".to_string()))
         }
-
-        let state: u32 = nm_dbus::get_property(
-            self.dbus_connection.as_ref()?,
-            &connection,
-            "org.freedesktop.NetworkManager.Connection.Active",
-            "State",
-        )?;
-
-        // https://people.freedesktop.org/~lkundrak/nm-docs/nm-dbus-types.html#NMActiveConnectionState
-        if state != 1 && state != 2 {
-            return Ok(ETH_DEFAULT.to_string());
-        }
-
-        let mut bitrate: i32 = 0;
-        // bitrate is in kilobits/second
-        // https://www.kernel.org/doc/Documentation/ABI/testing/sysfs-class-net
-        if let Ok(speed) =
-            read_first_line_in_file(&format!("/sys/class/net/{ETH_DEVICE_NAME}/speed"))
-        {
-            bitrate = speed.trim().parse().unwrap();
-        }
-
-        // The bitrate will be -1 if no connection is active
-        if bitrate == -1 {
-            return Ok(ETH_DEFAULT.to_string());
-        }
-
-        let ip4_config: Path = nm_dbus::get_property(
-            self.dbus_connection.as_ref()?,
-            &connection,
-            "org.freedesktop.NetworkManager.Connection.Active",
-            "Ip4Config",
-        )?;
-
-        let eth_ip: Vec<PropMap> = nm_dbus::get_property(
-            self.dbus_connection.as_ref()?,
-            &ip4_config,
-            "org.freedesktop.NetworkManager.IP4Config",
-            "AddressData",
-        )?;
-
-        Ok(format!(
-            "E: S={} Mb/s => {}",
-            bitrate,
-            eth_ip[0].get("address").unwrap().as_str().unwrap(),
-        ))
     }
 
     fn get_wlan_information(&self) -> Result<String, WidgetError> {
-        let connection: Path = nm_dbus::get_property(
-            self.dbus_connection.as_ref()?,
-            self.dbus_wifi_device_path.as_ref()?,
-            "org.freedesktop.NetworkManager.Device",
-            "ActiveConnection",
-        )?;
-
-        if connection.to_string() == "/" {
-            return Ok(WIFI_DEFAULT.to_string());
+        if let Ok(netlink) = self.netlink.as_ref() {
+            let interface = netlink.interface_information(WIFI_DEVICE_NAME)?;
+            if interface.ssid.is_empty() && interface.ip.is_empty() {
+                Ok(self.default_full_text.to_string())
+            } else {
+                Ok(format!(
+                    "W: SSID={} => {}",
+                    if interface.ssid.is_empty() {
+                        String::from("????")
+                    } else {
+                        interface.ssid
+                    },
+                    if interface.ip.is_empty() {
+                        String::from("????")
+                    } else {
+                        interface.ip
+                    },
+                ))
+            }
+        } else {
+            Err(WidgetError::new("Netlink socket error".to_string()))
         }
-
-        let state: u32 = nm_dbus::get_property(
-            self.dbus_connection.as_ref()?,
-            &connection,
-            "org.freedesktop.NetworkManager.Connection.Active",
-            "State",
-        )?;
-
-        // https://people.freedesktop.org/~lkundrak/nm-docs/nm-dbus-types.html#NMActiveConnectionState
-        if state != 1 && state != 2 {
-            return Ok(WIFI_DEFAULT.to_string());
-        }
-
-        // bitrate is in kilobits/second
-        let bitrate: u32 = nm_dbus::get_property(
-            self.dbus_connection.as_ref()?,
-            self.dbus_wifi_device_path.as_ref()?,
-            "org.freedesktop.NetworkManager.Device.Wireless",
-            "Bitrate",
-        )?;
-
-        let connection_object: Path = nm_dbus::get_property(
-            self.dbus_connection.as_ref()?,
-            &connection,
-            "org.freedesktop.NetworkManager.Connection.Active",
-            "Connection",
-        )?;
-
-        let ip4_config: Path = nm_dbus::get_property(
-            self.dbus_connection.as_ref()?,
-            &connection,
-            "org.freedesktop.NetworkManager.Connection.Active",
-            "Ip4Config",
-        )?;
-
-        let connection_settings: HashMap<String, PropMap> = nm_dbus::method_call(
-            self.dbus_connection.as_ref()?,
-            &connection_object,
-            "org.freedesktop.NetworkManager.Settings.Connection",
-            "GetSettings",
-            (),
-        )?;
-
-        let wifi_ip: Vec<PropMap> = nm_dbus::get_property(
-            self.dbus_connection.as_ref()?,
-            &ip4_config,
-            "org.freedesktop.NetworkManager.IP4Config",
-            "AddressData",
-        )?;
-
-        Ok(format!(
-            "W: SSID={} S={} Mb/s => {}",
-            // We are very confident that this many unwraps are fine
-            connection_settings
-                .get("connection")
-                .unwrap()
-                .get("id")
-                .unwrap()
-                .as_str()
-                .unwrap(),
-            bitrate / 1024,
-            wifi_ip[0].get("address").unwrap().as_str().unwrap(),
-        ))
     }
 }
 
@@ -248,7 +125,10 @@ impl<'a> Widget for NetworkInformation<'a> {
 
         match network_information {
             Ok(network_information) => {
-                self.color = if network_information.contains("down") {
+                self.error = None;
+                self.color = if network_information[1..].eq(": down")
+                    || network_information.contains("????")
+                {
                     RED
                 } else {
                     GREEN
@@ -258,6 +138,7 @@ impl<'a> Widget for NetworkInformation<'a> {
             Err(error) => {
                 self.error = Some(error.to_string());
                 self.color = RED;
+                self.full_text = self.default_full_text.to_string();
             }
         }
     }

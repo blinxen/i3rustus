@@ -1,5 +1,6 @@
 mod config;
 mod i3_status;
+mod netlink;
 mod utils;
 mod widget_executor;
 mod widgets;

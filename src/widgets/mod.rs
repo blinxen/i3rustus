@@ -63,15 +63,3 @@ impl From<serde_json::Error> for WidgetError {
         WidgetError::new(item.to_string())
     }
 }
-
-impl From<dbus::Error> for WidgetError {
-    fn from(item: dbus::Error) -> Self {
-        WidgetError::new(item.to_string())
-    }
-}
-
-impl From<&dbus::Error> for WidgetError {
-    fn from(item: &dbus::Error) -> Self {
-        WidgetError::new(item.to_string())
-    }
-}

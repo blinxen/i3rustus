@@ -8,7 +8,6 @@ use serde_json::Value;
 
 use crate::config::NEUTRAL;
 use crate::config::RED;
-use crate::utils::macros::cast_to_u64;
 use crate::widgets::Widget;
 use crate::widgets::WidgetError;
 
@@ -49,7 +48,7 @@ impl<'a> Disk<'a> {
             // calculate the value ourselfs
             if statvfs(path_in_c.as_ptr() as *const _, &mut stat) == 0 {
                 directory_size =
-                    cast_to_u64!(cast_to_u64!(stat.f_bsize) * cast_to_u64!(stat.f_bavail));
+                    u64::from(u64::from(stat.f_bsize) * u64::from(stat.f_bavail));
             }
 
             directory_size / 1024 / 1024 / 1024
@@ -67,7 +66,7 @@ impl<'a> Disk<'a> {
             // calculate the value ourselfs
             if statvfs(path_in_c.as_ptr() as *const _, &mut stat) == 0 {
                 directory_size =
-                    cast_to_u64!(cast_to_u64!(stat.f_blocks) * cast_to_u64!(stat.f_frsize));
+                    u64::from(u64::from(stat.f_blocks) * u64::from(stat.f_frsize));
             }
 
             directory_size / 1024 / 1024 / 1024

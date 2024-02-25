@@ -15,7 +15,6 @@ impl Log for Logger {
 
     fn log(&self, record: &Record) {
         if self.enabled(record.metadata()) && self.file.is_some() {
-            // println!();
             self.file
                 .as_ref()
                 .unwrap()

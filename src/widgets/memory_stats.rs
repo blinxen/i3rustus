@@ -83,7 +83,7 @@ impl<'a> MemoryUsage<'a> {
 
         if let Some(memory_file) = read_file("/proc/meminfo") {
             let reader = BufReader::new(memory_file);
-            for line in reader.lines().flatten() {
+            for line in reader.lines().map_while(Result::ok) {
                 if line.starts_with("MemTotal") {
                     // Convert to kb to gb
                     memory_information.total_usable = self.get_int_from_str(line)?;

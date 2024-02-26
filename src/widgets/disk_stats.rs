@@ -47,7 +47,7 @@ impl<'a> Disk<'a> {
             // Look at the statvfs implementation to understand why it is way faster than to
             // calculate the value ourselfs
             if statvfs(path_in_c.as_ptr() as *const _, &mut stat) == 0 {
-                directory_size = u64::from(u64::from(stat.f_bsize) * u64::from(stat.f_bavail));
+                directory_size = stat.f_bsize * stat.f_bavail;
             }
 
             directory_size / 1024 / 1024 / 1024
@@ -64,7 +64,7 @@ impl<'a> Disk<'a> {
             // Look at the statvfs implementation to understand why it is way faster than to
             // calculate the value ourselfs
             if statvfs(path_in_c.as_ptr() as *const _, &mut stat) == 0 {
-                directory_size = u64::from(u64::from(stat.f_blocks) * u64::from(stat.f_frsize));
+                directory_size = stat.f_blocks * stat.f_frsize;
             }
 
             directory_size / 1024 / 1024 / 1024

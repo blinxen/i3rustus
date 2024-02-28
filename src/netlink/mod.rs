@@ -18,7 +18,7 @@ use crate::netlink::constants::*;
 use crate::netlink::generic_netlink_header::GenericNetlinkMessageHeader;
 use crate::netlink::interface_address_message::InterfaceAddressMessage;
 use crate::netlink::netlink_attribute::NetlinkAttribute;
-use crate::netlink::netlink_header::{NetlinkMessageHeader, Payload};
+use crate::netlink::netlink_header::{NetlinkMessageHeader, Payload, get_attribute};
 use crate::utils::walking_vec::WalkingVec;
 
 // This is the maximum length that a netlink message can have
@@ -29,7 +29,13 @@ const WIRELESS_SUBSYSTEM_NAME: &str = "nl80211\0";
 pub struct InterfaceInformation {
     pub ssid: String,
     pub ip: String,
+    pub frequency: u32,
     // pub tx_bitrate: u32,
+}
+
+pub struct BSSInformation {
+    pub ssid: String,
+    pub frequency: u32,
 }
 
 #[derive(Debug)]
@@ -226,15 +232,19 @@ impl Netlink {
         }
     }
 
-    fn interface_ssid(&self, interface_name: &str) -> Result<String, IOError> {
+    fn interface_bss_information(&self, interface_name: &str) -> Result<BSSInformation, IOError> {
         let interface_index = self.get_interface_index(interface_name)?;
-        let mut ssid = String::new();
+        let mut bss = BSSInformation {
+            ssid: String::new(),
+            frequency: 0,
+        };
 
-        let family_name_attribute =
-            NetlinkAttribute::build(NL80211_ATTR_IFINDEX, interface_index.to_le_bytes().to_vec());
         let genl_header = GenericNetlinkMessageHeader::build(
-            NL80211_CMD_GET_INTERFACE,
-            vec![family_name_attribute],
+            NL80211_CMD_GET_SCAN,
+            vec![NetlinkAttribute::build(
+                NL80211_ATTR_IFINDEX,
+                interface_index.to_le_bytes().to_vec(),
+            )],
         );
 
         if let Ok(nl_80211_family_id) = self.nl_80211_family_id.as_ref() {
@@ -245,19 +255,80 @@ impl Netlink {
                 Payload::GenericNetlink(genl_header),
             )?;
 
-            if let Payload::GenericNetlink(message) = &response[0].payload {
-                for attribute in message.attributes.iter() {
-                    if (attribute.attribute_type as i32) == NL80211_ATTR_SSID {
-                        ssid.push_str(&String::from_utf8_lossy(&attribute.data));
+            // Iterate over all received BSS results
+            for message in response.iter() {
+                if let Payload::GenericNetlink(message) = &message.payload {
+                    // Search for a BSS attribute
+                    let bss_attribute = get_attribute(&message.attributes, NL80211_ATTR_BSS);
+                    if bss_attribute.is_none() {
+                        // We did not find a BSS attribute--> ignore this message
+                        continue;
+                    }
+                    // Parse the nested attributes in the BSS attribute
+                    let bss_attributes = netlink_header::parse_attributes(&mut WalkingVec {
+                        buffer: bss_attribute.unwrap().data.to_owned(),
+                        position: 0,
+                    });
+                    if bss_attributes.is_empty() {
+                        // No attributes found --> ignore this message
+                        continue;
+                    }
+
+                    let bss_status = get_attribute(&bss_attributes, NL80211_BSS_STATUS);
+                    if let Some(bss_status) = bss_status {
+                        let status =
+                            u32::from_le_bytes(bss_status.data.clone().try_into().unwrap());
+                        if status != NL80211_BSS_STATUS_ASSOCIATED
+                            && status != NL80211_BSS_STATUS_IBSS_JOINED
+                        {
+                            // We are not connected to this BSS --> ignore this message
+                            continue;
+                        }
+                    } else {
+                        // No status could be found --> ignore this message
+                        continue;
+                    }
+
+                    let bss_information_elements =
+                        get_attribute(&bss_attributes, NL80211_BSS_INFORMATION_ELEMENTS);
+                    if let Some(bss_information_elements) = bss_information_elements {
+                        // Based on https://github.com/i3/i3status/blob/main/src/print_wireless_info.c#L141
+                        let mut ies = bss_information_elements.data.to_owned();
+                        while ies.len() > 2 && ies[0] != 0 {
+                            ies = ies[(ies[1] as usize + 2)..].to_owned();
+                        }
+
+                        if ies.len() < 2 || ies.len() < ies[1] as usize + 2 {
+                            break;
+                        };
+
+                        let ssid_len = ies[1] as usize;
+                        let ssid_bytes = &ies[2..][..ssid_len];
+
+                        bss.ssid = String::from_utf8_lossy(ssid_bytes).into_owned();
+                    }
+
+                    let bss_freq = get_attribute(&bss_attributes, NL80211_BSS_FREQUENCY);
+                    if let Some(bss_freq) = bss_freq {
+                        // TODO: Can we remove this clone?
+                        bss.frequency =
+                            u32::from_le_bytes(bss_freq.data.clone().try_into().unwrap());
+                    }
+
+                    // We found the Access Point that we are connected to
+                    if !bss.ssid.is_empty() {
+                        break;
                     }
                 }
             }
         }
 
-        if ssid.is_empty() {
+        // We only care about the SSID here
+        // If frequency is not set correctly, then we don't care
+        if bss.ssid.is_empty() {
             Err(IOError::new(ErrorKind::Other, "Could not determine SSID"))
         } else {
-            Ok(ssid)
+            Ok(bss)
         }
     }
 
@@ -345,18 +416,11 @@ impl Netlink {
         &self,
         interface_name: &str,
     ) -> Result<InterfaceInformation, IOError> {
-        let mut interface = InterfaceInformation {
-            ssid: String::from(""),
-            ip: String::from(""),
-        };
-        if let Ok(ssid) = self.interface_ssid(interface_name) {
-            interface.ssid = ssid;
-        }
-
-        if let Ok(ip) = self.interface_ip(interface_name) {
-            interface.ip = ip;
-        }
-
-        Ok(interface)
+        let bss = self.interface_bss_information(interface_name)?;
+        Ok(InterfaceInformation {
+            ssid: bss.ssid,
+            frequency: bss.frequency,
+            ip: self.interface_ip(interface_name)?,
+        })
     }
 }

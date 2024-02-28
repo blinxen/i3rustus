@@ -14,6 +14,7 @@ pub struct InterfaceAddressMessage {
     pub index: u32,
     pub attributes: Vec<NetlinkAttribute>,
 }
+
 impl InterfaceAddressMessage {
     pub fn build(
         family: u8,

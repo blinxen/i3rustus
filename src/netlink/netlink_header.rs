@@ -9,6 +9,22 @@ use crate::{
 
 use super::constants::NETLINK_HEADER_SIZE;
 
+pub fn get_attribute(
+    attributes: &Vec<NetlinkAttribute>,
+    attribute_type: i32,
+) -> Option<&NetlinkAttribute> {
+    let mut attribute = None;
+
+    for attr in attributes {
+        if attr.attribute_type as i32 == attribute_type {
+            attribute = Some(attr);
+            break;
+        }
+    }
+
+    attribute
+}
+
 pub fn parse_attributes(buffer: &mut WalkingVec) -> Vec<NetlinkAttribute> {
     let mut attributes = Vec::new();
 

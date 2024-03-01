@@ -5,10 +5,10 @@ mod netlink_attribute;
 mod netlink_header;
 
 use libc::{
-    bind, c_void, connect, recv, sa_family_t, send, sockaddr, sockaddr_nl, socket, socklen_t,
-    AF_NETLINK, AF_UNSPEC, CTRL_ATTR_FAMILY_ID, CTRL_ATTR_FAMILY_NAME, CTRL_CMD_GETFAMILY,
-    GENL_ID_CTRL, IFA_LOCAL, NETLINK_GENERIC, NETLINK_ROUTE, NLMSG_DONE, NLMSG_ERROR, NLM_F_ACK,
-    NLM_F_DUMP, NLM_F_REQUEST, RTM_GETADDR, RT_SCOPE_UNIVERSE, SOCK_RAW,
+    bind, c_void, connect, recv, sa_family_t, send, sockaddr, socket, socklen_t, AF_NETLINK,
+    AF_UNSPEC, CTRL_ATTR_FAMILY_ID, CTRL_ATTR_FAMILY_NAME, CTRL_CMD_GETFAMILY, GENL_ID_CTRL,
+    IFA_LOCAL, NETLINK_GENERIC, NETLINK_ROUTE, NLMSG_DONE, NLMSG_ERROR, NLM_F_ACK, NLM_F_DUMP,
+    NLM_F_REQUEST, RTM_GETADDR, RT_SCOPE_UNIVERSE, SOCK_RAW,
 };
 use std::ffi::CString;
 use std::io::{Error as IOError, ErrorKind};
@@ -50,16 +50,43 @@ impl Netlink {
         if generic_netlink_socket < 0 || netlink_route_socket < 0 {
             return Err(IOError::last_os_error());
         }
-        let (address_ptr, address_length) = Self::socket_address();
+        let socket_address = sockaddr {
+            sa_family: AF_NETLINK as sa_family_t,
+            sa_data: [0; 14],
+        };
 
-        if unsafe { bind(generic_netlink_socket, address_ptr, address_length) } < 0
-            || unsafe { bind(netlink_route_socket, address_ptr, address_length) } < 0
+        if unsafe {
+            bind(
+                generic_netlink_socket,
+                &socket_address as *const sockaddr,
+                std::mem::size_of::<sockaddr>() as socklen_t,
+            )
+        } < 0
+            || unsafe {
+                bind(
+                    netlink_route_socket,
+                    &socket_address as *const sockaddr,
+                    std::mem::size_of::<sockaddr>() as socklen_t,
+                )
+            } < 0
         {
             return Err(IOError::last_os_error());
         }
 
-        if unsafe { connect(generic_netlink_socket, address_ptr, address_length) } < 0
-            || unsafe { connect(netlink_route_socket, address_ptr, address_length) } < 0
+        if unsafe {
+            connect(
+                generic_netlink_socket,
+                &socket_address as *const sockaddr,
+                std::mem::size_of::<sockaddr>() as socklen_t,
+            )
+        } < 0
+            || unsafe {
+                connect(
+                    netlink_route_socket,
+                    &socket_address as *const sockaddr,
+                    std::mem::size_of::<sockaddr>() as socklen_t,
+                )
+            } < 0
         {
             return Err(IOError::last_os_error());
         }
@@ -70,21 +97,6 @@ impl Netlink {
             netlink_route_socket,
             nl_80211_family_id,
         })
-    }
-
-    // Create a netlink socket address
-    fn socket_address() -> (*const sockaddr, socklen_t) {
-        let mut address: sockaddr_nl = unsafe { std::mem::zeroed() };
-        address.nl_family = AF_NETLINK as sa_family_t;
-        // The destination is the kernel, so we don't
-        // really need to set this to something usefull
-        address.nl_pid = 0;
-        // Unicast
-        address.nl_groups = 0;
-        (
-            &address as *const sockaddr_nl as *const sockaddr,
-            std::mem::size_of::<sockaddr>() as socklen_t,
-        )
     }
 
     // Retrive the subsystem family ID for nl80211

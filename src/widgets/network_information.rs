@@ -70,7 +70,8 @@ impl<'a> NetworkInformation<'a> {
                 Ok(self.default_full_text.to_string())
             } else {
                 Ok(format!(
-                    "E: {}",
+                    "E: S={} Mb/s => {}",
+                    interface.bitrate,
                     if interface.ip.is_empty() {
                         String::from("????")
                     } else {
@@ -90,13 +91,14 @@ impl<'a> NetworkInformation<'a> {
                 Ok(self.default_full_text.to_string())
             } else {
                 Ok(format!(
-                    "W: SSID={} F={} GHz => {}",
+                    "W: SSID={} F={} GHz S={} Mb/s => {}",
                     if interface.ssid.is_empty() {
                         String::from("????")
                     } else {
                         interface.ssid
                     },
                     interface.frequency,
+                    interface.bitrate,
                     if interface.ip.is_empty() {
                         String::from("????")
                     } else {

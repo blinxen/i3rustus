@@ -19,6 +19,12 @@ pub const NL80211_BSS_FREQUENCY: i32 = 2;
 pub const NL80211_BSS_INFORMATION_ELEMENTS: i32 = 6;
 pub const NL80211_BSS_STATUS: i32 = 9;
 
-// nl80211_bss_status {
+// nl80211_bss_status
 pub const NL80211_BSS_STATUS_ASSOCIATED: u32 = 1;
 pub const NL80211_BSS_STATUS_IBSS_JOINED: u32 = 2;
+
+// nl80211_sta_info
+pub const NL80211_STA_INFO_TX_BITRATE: i32 = 8;
+
+// nl80211_rate_info
+pub const NL80211_RATE_INFO_BITRATE: i32 = 1;

@@ -30,7 +30,7 @@ pub struct InterfaceInformation {
     pub ssid: String,
     pub ip: String,
     pub frequency: f32,
-    // pub tx_bitrate: u32,
+    pub bitrate: u16,
 }
 
 pub struct BSSInformation {
@@ -112,7 +112,8 @@ impl Netlink {
         )?;
 
         if let Payload::GenericNetlink(message) = &response[0].payload {
-            let family_id_attribute = netlink_header::get_attribute(&message.attributes, CTRL_ATTR_FAMILY_ID);
+            let family_id_attribute =
+                netlink_header::get_attribute(&message.attributes, CTRL_ATTR_FAMILY_ID);
             if let Some(family_id_attribute) = family_id_attribute {
                 family_id =
                     u16::from_le_bytes(family_id_attribute.data.clone().try_into().unwrap()) as i32;
@@ -262,7 +263,8 @@ impl Netlink {
             for message in response.iter() {
                 if let Payload::GenericNetlink(message) = &message.payload {
                     // Search for a BSS attribute
-                    let bss_attribute = netlink_header::get_attribute(&message.attributes, NL80211_ATTR_BSS);
+                    let bss_attribute =
+                        netlink_header::get_attribute(&message.attributes, NL80211_ATTR_BSS);
                     if bss_attribute.is_none() {
                         // We did not find a BSS attribute--> ignore this message
                         continue;
@@ -277,7 +279,8 @@ impl Netlink {
                         continue;
                     }
 
-                    let bss_status = netlink_header::get_attribute(&bss_attributes, NL80211_BSS_STATUS);
+                    let bss_status =
+                        netlink_header::get_attribute(&bss_attributes, NL80211_BSS_STATUS);
                     if let Some(bss_status) = bss_status {
                         let status =
                             u32::from_le_bytes(bss_status.data.clone().try_into().unwrap());
@@ -292,8 +295,10 @@ impl Netlink {
                         continue;
                     }
 
-                    let bss_information_elements =
-                        netlink_header::get_attribute(&bss_attributes, NL80211_BSS_INFORMATION_ELEMENTS);
+                    let bss_information_elements = netlink_header::get_attribute(
+                        &bss_attributes,
+                        NL80211_BSS_INFORMATION_ELEMENTS,
+                    );
                     if let Some(bss_information_elements) = bss_information_elements {
                         // Based on https://github.com/i3/i3status/blob/main/src/print_wireless_info.c#L141
                         let mut ies = bss_information_elements.data.to_owned();
@@ -311,7 +316,8 @@ impl Netlink {
                         bss.ssid = String::from_utf8_lossy(ssid_bytes).into_owned();
                     }
 
-                    let bss_freq = netlink_header::get_attribute(&bss_attributes, NL80211_BSS_FREQUENCY);
+                    let bss_freq =
+                        netlink_header::get_attribute(&bss_attributes, NL80211_BSS_FREQUENCY);
                     if let Some(bss_freq) = bss_freq {
                         // Frequency is in megahertz, but we want it in gigahertz
                         bss.frequency =
@@ -385,15 +391,16 @@ impl Netlink {
         }
     }
 
-    fn interface_tx_rate(&self, interface_name: &str) -> Result<f32, IOError> {
-        let tx = 0.0;
+    fn interface_tx_rate(&self, interface_name: &str) -> Result<u16, IOError> {
+        let mut bitrate = 0;
         let interface_index = self.get_interface_index(interface_name)?;
 
-        let family_name_attribute =
-            NetlinkAttribute::build(NL80211_ATTR_IFINDEX, interface_index.to_le_bytes().to_vec());
         let genl_header = GenericNetlinkMessageHeader::build(
             NL80211_CMD_GET_STATION,
-            vec![family_name_attribute],
+            vec![NetlinkAttribute::build(
+                NL80211_ATTR_IFINDEX,
+                interface_index.to_le_bytes().to_vec(),
+            )],
         );
 
         if let Ok(nl_80211_family_id) = self.nl_80211_family_id.as_ref() {
@@ -405,15 +412,40 @@ impl Netlink {
             )?;
 
             if let Payload::GenericNetlink(message) = &response[0].payload {
-                for attribute in message.attributes.iter() {
-                    if attribute.attribute_type as i32 == NL80211_ATTR_STA_INFO {
-                        println!("{:?}", attribute);
+                let station_info =
+                    netlink_header::get_attribute(&message.attributes, NL80211_ATTR_STA_INFO);
+                if let Some(station_info) = station_info {
+                    // Parse the nested attributes
+                    let station_info_attributes =
+                        netlink_header::parse_attributes(&mut WalkingVec {
+                            buffer: station_info.data.to_owned(),
+                            position: 0,
+                        });
+                    if let Some(rate_info) = netlink_header::get_attribute(
+                        &station_info_attributes,
+                        NL80211_STA_INFO_TX_BITRATE,
+                    ) {
+                        let rate_info_attributes =
+                            netlink_header::parse_attributes(&mut WalkingVec {
+                                buffer: rate_info.data.to_owned(),
+                                position: 0,
+                            });
+                        if let Some(raw_bitrate) = netlink_header::get_attribute(
+                            &rate_info_attributes,
+                            NL80211_RATE_INFO_BITRATE,
+                        ) {
+                            bitrate =
+                                u16::from_le_bytes(raw_bitrate.data.clone().try_into().unwrap())
+                                    as u32
+                                    * 100
+                                    / 1000;
+                        }
                     }
                 }
             }
         }
 
-        Ok(tx)
+        Ok(bitrate as u16)
     }
 
     pub fn interface_information(
@@ -425,6 +457,7 @@ impl Netlink {
             ssid: bss.ssid,
             frequency: bss.frequency,
             ip: self.interface_ip(interface_name)?,
+            bitrate: self.interface_tx_rate(interface_name)?,
         })
     }
 }

@@ -73,7 +73,10 @@ impl<'a> NetworkInformation<'a> {
                 Ok(format!("E: S={} Mb/s => {}", bitrate, ip))
             }
         } else {
-            Err(WidgetError::new("Netlink socket error".to_string()))
+            Err(WidgetError::new(format!(
+                "Netlink socket error: {}",
+                &self.netlink.as_ref().unwrap_err()
+            )))
         }
     }
 
@@ -102,7 +105,10 @@ impl<'a> NetworkInformation<'a> {
                 ))
             }
         } else {
-            Err(WidgetError::new("Netlink socket error".to_string()))
+            Err(WidgetError::new(format!(
+                "Netlink socket error: {}",
+                &self.netlink.as_ref().unwrap_err()
+            )))
         }
     }
 }

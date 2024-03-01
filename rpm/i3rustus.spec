@@ -2,7 +2,7 @@
 %bcond_with check
 
 Name:           i3rustus
-Version:        0.2.1
+Version:        0.3.0
 Release:        1%{?dist}
 Summary:        Lightweight implementation of i3status in rust
 # Apache-2.0 OR BSL-1.0
@@ -13,7 +13,7 @@ License:        (Apache-2.0 OR BSL-1.0) AND (Apache-2.0 OR MIT) AND MIT AND (MIT
 URL:            https://github.com/blinxen/%{name}
 Source:         %{url}/archive/%{version}/%{name}-%{version}.tar.gz
 
-BuildRequires:  rust-packaging >= 21
+BuildRequires:  cargo-rpm-macros >= 24
 
 %description
 Lightweight implementation of i3status in rust
@@ -45,6 +45,9 @@ Lightweight implementation of i3status in rust
 %endif
 
 %changelog
+* Sat Mar 02 2024 blinxen <h-k-81@hotmail.com> - 0.3.0-1
+- Update to version 0.3.0
+- Use netlink instead of NetworkManager dbus to get network information
 * Mon Jun 26 2023 blinxen <h-k-81@hotmail.com> - 0.2.1-1
 - Update to version 0.2.1
 * Mon May 29 2023 blinxen <h-k-81@hotmail.com> - 0.2.0-1

@@ -90,7 +90,7 @@ impl<'a> NetworkInformation<'a> {
                 Ok(self.default_full_text.to_string())
             } else {
                 Ok(format!(
-                    "W: SSID={} F={} Mhz => {}",
+                    "W: SSID={} F={} GHz => {}",
                     if interface.ssid.is_empty() {
                         String::from("????")
                     } else {

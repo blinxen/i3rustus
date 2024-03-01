@@ -29,13 +29,13 @@ const WIRELESS_SUBSYSTEM_NAME: &str = "nl80211\0";
 pub struct InterfaceInformation {
     pub ssid: String,
     pub ip: String,
-    pub frequency: u32,
+    pub frequency: f32,
     // pub tx_bitrate: u32,
 }
 
 pub struct BSSInformation {
     pub ssid: String,
-    pub frequency: u32,
+    pub frequency: f32,
 }
 
 #[derive(Debug)]
@@ -239,7 +239,7 @@ impl Netlink {
         let interface_index = self.get_interface_index(interface_name)?;
         let mut bss = BSSInformation {
             ssid: String::new(),
-            frequency: 0,
+            frequency: 0.0,
         };
 
         let genl_header = GenericNetlinkMessageHeader::build(
@@ -311,11 +311,12 @@ impl Netlink {
                         bss.ssid = String::from_utf8_lossy(ssid_bytes).into_owned();
                     }
 
-                    let bss_freq = get_attribute(&bss_attributes, NL80211_BSS_FREQUENCY);
+                    let bss_freq = netlink_header::get_attribute(&bss_attributes, NL80211_BSS_FREQUENCY);
                     if let Some(bss_freq) = bss_freq {
-                        // TODO: Can we remove this clone?
+                        // Frequency is in megahertz, but we want it in gigahertz
                         bss.frequency =
-                            u32::from_le_bytes(bss_freq.data.clone().try_into().unwrap());
+                            u32::from_le_bytes(bss_freq.data.clone().try_into().unwrap()) as f32
+                                / 1000.0;
                     }
 
                     // We found the Access Point that we are connected to

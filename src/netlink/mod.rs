@@ -18,7 +18,7 @@ use crate::netlink::constants::*;
 use crate::netlink::generic_netlink_header::GenericNetlinkMessageHeader;
 use crate::netlink::interface_address_message::InterfaceAddressMessage;
 use crate::netlink::netlink_attribute::NetlinkAttribute;
-use crate::netlink::netlink_header::{NetlinkMessageHeader, Payload, get_attribute};
+use crate::netlink::netlink_header::{NetlinkMessageHeader, Payload};
 use crate::utils::walking_vec::WalkingVec;
 
 // This is the maximum length that a netlink message can have
@@ -48,7 +48,9 @@ pub struct Netlink {
 impl Netlink {
     // Create a generic netlink socket
     pub fn new() -> Result<Self, IOError> {
+        // This socket is used to retrieve: SSID, Frequency, bitrate
         let generic_netlink_socket = unsafe { socket(AF_NETLINK, SOCK_RAW, NETLINK_GENERIC) };
+        // This socket is used to retrieve: Local IP Address
         let netlink_route_socket = unsafe { socket(AF_NETLINK, SOCK_RAW, NETLINK_ROUTE) };
 
         if generic_netlink_socket < 0 || netlink_route_socket < 0 {
@@ -91,15 +93,17 @@ impl Netlink {
         )
     }
 
+    // Retrive the subsystem family ID for nl80211
     fn get_80211_family_id(socket: RawFd) -> Result<i32, IOError> {
         let mut family_id = i32::MIN;
 
-        let family_name_attribute = NetlinkAttribute::build(
-            CTRL_ATTR_FAMILY_NAME,
-            WIRELESS_SUBSYSTEM_NAME.as_bytes().to_vec(),
+        let genl_header = GenericNetlinkMessageHeader::build(
+            CTRL_CMD_GETFAMILY,
+            vec![NetlinkAttribute::build(
+                CTRL_ATTR_FAMILY_NAME,
+                WIRELESS_SUBSYSTEM_NAME.as_bytes().to_vec(),
+            )],
         );
-        let genl_header =
-            GenericNetlinkMessageHeader::build(CTRL_CMD_GETFAMILY, vec![family_name_attribute]);
         let response = Self::request(
             socket,
             GENL_ID_CTRL,
@@ -108,18 +112,17 @@ impl Netlink {
         )?;
 
         if let Payload::GenericNetlink(message) = &response[0].payload {
-            for attribute in message.attributes.iter() {
-                if attribute.attribute_type as i32 == CTRL_ATTR_FAMILY_ID {
-                    family_id =
-                        u16::from_le_bytes(attribute.data.clone().try_into().unwrap()) as i32;
-                }
+            let family_id_attribute = netlink_header::get_attribute(&message.attributes, CTRL_ATTR_FAMILY_ID);
+            if let Some(family_id_attribute) = family_id_attribute {
+                family_id =
+                    u16::from_le_bytes(family_id_attribute.data.clone().try_into().unwrap()) as i32;
             }
         }
 
         if family_id == i32::MIN {
             Err(IOError::new(
                 ErrorKind::Other,
-                "Could not retrieve 80211 netlink ID",
+                "Could not retrieve nl80211 family ID",
             ))
         } else {
             Ok(family_id)
@@ -259,7 +262,7 @@ impl Netlink {
             for message in response.iter() {
                 if let Payload::GenericNetlink(message) = &message.payload {
                     // Search for a BSS attribute
-                    let bss_attribute = get_attribute(&message.attributes, NL80211_ATTR_BSS);
+                    let bss_attribute = netlink_header::get_attribute(&message.attributes, NL80211_ATTR_BSS);
                     if bss_attribute.is_none() {
                         // We did not find a BSS attribute--> ignore this message
                         continue;
@@ -274,7 +277,7 @@ impl Netlink {
                         continue;
                     }
 
-                    let bss_status = get_attribute(&bss_attributes, NL80211_BSS_STATUS);
+                    let bss_status = netlink_header::get_attribute(&bss_attributes, NL80211_BSS_STATUS);
                     if let Some(bss_status) = bss_status {
                         let status =
                             u32::from_le_bytes(bss_status.data.clone().try_into().unwrap());
@@ -290,7 +293,7 @@ impl Netlink {
                     }
 
                     let bss_information_elements =
-                        get_attribute(&bss_attributes, NL80211_BSS_INFORMATION_ELEMENTS);
+                        netlink_header::get_attribute(&bss_attributes, NL80211_BSS_INFORMATION_ELEMENTS);
                     if let Some(bss_information_elements) = bss_information_elements {
                         // Based on https://github.com/i3/i3status/blob/main/src/print_wireless_info.c#L141
                         let mut ies = bss_information_elements.data.to_owned();
@@ -356,16 +359,16 @@ impl Netlink {
             if let Payload::RtmGetAddr(message) = &message.payload {
                 // Only read messages that contain information about the specified interface
                 if message.index == interface_index {
-                    for attribute in message.attributes.iter() {
-                        if attribute.attribute_type == IFA_LOCAL {
-                            ip = format!(
-                                "{}.{}.{}.{}",
-                                attribute.data[0],
-                                attribute.data[1],
-                                attribute.data[2],
-                                attribute.data[3]
-                            );
-                        }
+                    let interface_address_local =
+                        netlink_header::get_attribute(&message.attributes, IFA_LOCAL as i32);
+                    if let Some(interface_address_local) = interface_address_local {
+                        ip = format!(
+                            "{}.{}.{}.{}",
+                            interface_address_local.data[0],
+                            interface_address_local.data[1],
+                            interface_address_local.data[2],
+                            interface_address_local.data[3]
+                        );
                     }
                 }
             }

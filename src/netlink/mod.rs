@@ -26,13 +26,7 @@ use crate::utils::walking_vec::WalkingVec;
 const MAX_NETLINK_MESSAGE_SIZE: usize = 32768;
 const WIRELESS_SUBSYSTEM_NAME: &str = "nl80211\0";
 
-pub struct InterfaceInformation {
-    pub ssid: String,
-    pub ip: String,
-    pub frequency: f32,
-    pub bitrate: u16,
-}
-
+#[derive(Debug)]
 pub struct BSSInformation {
     pub ssid: String,
     pub frequency: f32,
@@ -236,7 +230,10 @@ impl Netlink {
         }
     }
 
-    fn interface_bss_information(&self, interface_name: &str) -> Result<BSSInformation, IOError> {
+    pub fn interface_bss_information(
+        &self,
+        interface_name: &str,
+    ) -> Result<BSSInformation, IOError> {
         let interface_index = self.get_interface_index(interface_name)?;
         let mut bss = BSSInformation {
             ssid: String::new(),
@@ -333,16 +330,10 @@ impl Netlink {
             }
         }
 
-        // We only care about the SSID here
-        // If frequency is not set correctly, then we don't care
-        if bss.ssid.is_empty() {
-            Err(IOError::new(ErrorKind::Other, "Could not determine SSID"))
-        } else {
-            Ok(bss)
-        }
+        Ok(bss)
     }
 
-    fn interface_ip(&self, interface_name: &str) -> Result<String, IOError> {
+    pub fn interface_ip(&self, interface_name: &str) -> Result<String, IOError> {
         let mut ip = String::new();
         let interface_index = self.get_interface_index(interface_name)?;
 
@@ -381,17 +372,10 @@ impl Netlink {
             }
         }
 
-        if ip.is_empty() {
-            Err(IOError::new(
-                ErrorKind::Other,
-                "Could not retrieve interface IP",
-            ))
-        } else {
-            Ok(ip)
-        }
+        Ok(ip)
     }
 
-    fn interface_tx_rate(&self, interface_name: &str) -> Result<u16, IOError> {
+    pub fn interface_bitrate(&self, interface_name: &str) -> Result<u16, IOError> {
         let mut bitrate = 0;
         let interface_index = self.get_interface_index(interface_name)?;
 
@@ -446,18 +430,5 @@ impl Netlink {
         }
 
         Ok(bitrate as u16)
-    }
-
-    pub fn interface_information(
-        &self,
-        interface_name: &str,
-    ) -> Result<InterfaceInformation, IOError> {
-        let bss = self.interface_bss_information(interface_name)?;
-        Ok(InterfaceInformation {
-            ssid: bss.ssid,
-            frequency: bss.frequency,
-            ip: self.interface_ip(interface_name)?,
-            bitrate: self.interface_tx_rate(interface_name)?,
-        })
     }
 }

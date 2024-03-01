@@ -65,19 +65,12 @@ impl<'a> NetworkInformation<'a> {
 
     fn get_ethernet_information(&self) -> Result<String, WidgetError> {
         if let Ok(netlink) = self.netlink.as_ref() {
-            let interface = netlink.interface_information(ETH_DEVICE_NAME)?;
-            if interface.ip.is_empty() {
+            let ip = netlink.interface_ip(ETH_DEVICE_NAME)?;
+            let bitrate = netlink.interface_bitrate(ETH_DEVICE_NAME)?;
+            if ip.is_empty() {
                 Ok(self.default_full_text.to_string())
             } else {
-                Ok(format!(
-                    "E: S={} Mb/s => {}",
-                    interface.bitrate,
-                    if interface.ip.is_empty() {
-                        String::from("????")
-                    } else {
-                        interface.ip
-                    },
-                ))
+                Ok(format!("E: S={} Mb/s => {}", bitrate, ip))
             }
         } else {
             Err(WidgetError::new("Netlink socket error".to_string()))
@@ -86,23 +79,25 @@ impl<'a> NetworkInformation<'a> {
 
     fn get_wlan_information(&self) -> Result<String, WidgetError> {
         if let Ok(netlink) = self.netlink.as_ref() {
-            let interface = netlink.interface_information(WIFI_DEVICE_NAME)?;
-            if interface.ssid.is_empty() && interface.ip.is_empty() {
+            let bss = netlink.interface_bss_information(WIFI_DEVICE_NAME)?;
+            let ip = netlink.interface_ip(WIFI_DEVICE_NAME)?;
+            let bitrate = netlink.interface_bitrate(WIFI_DEVICE_NAME)?;
+            if bss.ssid.is_empty() && ip.is_empty() {
                 Ok(self.default_full_text.to_string())
             } else {
                 Ok(format!(
                     "W: SSID={} F={} GHz S={} Mb/s => {}",
-                    if interface.ssid.is_empty() {
+                    if bss.ssid.is_empty() {
                         String::from("????")
                     } else {
-                        interface.ssid
+                        bss.ssid
                     },
-                    interface.frequency,
-                    interface.bitrate,
-                    if interface.ip.is_empty() {
+                    bss.frequency,
+                    bitrate,
+                    if ip.is_empty() {
                         String::from("????")
                     } else {
-                        interface.ip
+                        ip
                     },
                 ))
             }

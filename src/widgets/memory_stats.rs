@@ -33,19 +33,19 @@ struct MemoryInfromation {
 }
 
 #[derive(Serialize)]
-pub struct MemoryUsage<'a> {
+pub struct MemoryUsage {
     // Name of the widget
-    name: &'a str,
+    name: &'static str,
     // Text that will be shown in the status bar
     full_text: Option<String>,
     // Color of the text
-    color: &'a str,
+    color: &'static str,
     #[serde(skip_serializing)]
     // Holds the error message if an error occured during widget update
     error: Option<String>,
 }
 
-impl<'a> MemoryUsage<'a> {
+impl MemoryUsage {
     pub fn new() -> Self {
         Self {
             name: "memory",
@@ -111,7 +111,7 @@ impl<'a> MemoryUsage<'a> {
     }
 }
 
-impl<'a> Widget for MemoryUsage<'a> {
+impl Widget for MemoryUsage {
     fn name(&self) -> &str {
         self.name
     }

@@ -3,12 +3,10 @@ use serde_json::Value;
 
 use crate::config::GREEN;
 use crate::config::RED;
+use crate::i3_status::CONFIG;
 use crate::netlink::Netlink;
 use crate::widgets::Widget;
 use crate::widgets::WidgetError;
-
-static WIFI_DEVICE_NAME: &str = "wlp3s0";
-static ETH_DEVICE_NAME: &str = "enp5s0";
 
 static ETH_DEFAULT: &str = "E: down";
 static WIFI_DEFAULT: &str = "W: down";
@@ -20,13 +18,15 @@ pub enum NetworkType {
 }
 
 #[derive(Serialize)]
-pub struct NetworkInformation<'a> {
+pub struct NetworkInformation {
     // Name of the widget
     name: &'static str,
     // Text that will be shown in the status bar
     full_text: String,
     // Color of the text
-    color: &'a str,
+    color: &'static str,
+    // Device name
+    device_name: &'static str,
     #[serde(skip_serializing)]
     network_type: NetworkType,
     #[serde(skip_serializing)]
@@ -38,7 +38,7 @@ pub struct NetworkInformation<'a> {
     default_full_text: String,
 }
 
-impl<'a> NetworkInformation<'a> {
+impl NetworkInformation {
     pub fn new(network_type: NetworkType) -> Self {
         let name = if network_type == NetworkType::Wlan {
             "wireless"
@@ -52,10 +52,17 @@ impl<'a> NetworkInformation<'a> {
             ETH_DEFAULT
         };
 
+        let device_name = if network_type == NetworkType::Wlan {
+            CONFIG.get_wifi_device_name()
+        } else {
+            CONFIG.get_ethernet_device_name()
+        };
+
         Self {
             name,
             full_text: default_full_text.to_string(),
             color: RED,
+            device_name,
             network_type,
             error: None,
             netlink: Netlink::new(),
@@ -65,8 +72,8 @@ impl<'a> NetworkInformation<'a> {
 
     fn get_ethernet_information(&self) -> Result<String, WidgetError> {
         if let Ok(netlink) = self.netlink.as_ref() {
-            let ip = netlink.interface_ip(ETH_DEVICE_NAME)?;
-            let bitrate = netlink.interface_bitrate(ETH_DEVICE_NAME)?;
+            let ip = netlink.interface_ip(self.device_name)?;
+            let bitrate = netlink.interface_bitrate(self.device_name)?;
             if ip.is_empty() {
                 Ok(self.default_full_text.to_string())
             } else {
@@ -82,9 +89,9 @@ impl<'a> NetworkInformation<'a> {
 
     fn get_wlan_information(&self) -> Result<String, WidgetError> {
         if let Ok(netlink) = self.netlink.as_ref() {
-            let bss = netlink.interface_bss_information(WIFI_DEVICE_NAME)?;
-            let ip = netlink.interface_ip(WIFI_DEVICE_NAME)?;
-            let bitrate = netlink.interface_bitrate(WIFI_DEVICE_NAME)?;
+            let bss = netlink.interface_bss_information(self.device_name)?;
+            let ip = netlink.interface_ip(self.device_name)?;
+            let bitrate = netlink.interface_bitrate(self.device_name)?;
             if bss.ssid.is_empty() && ip.is_empty() {
                 Ok(self.default_full_text.to_string())
             } else {
@@ -113,7 +120,7 @@ impl<'a> NetworkInformation<'a> {
     }
 }
 
-impl<'a> Widget for NetworkInformation<'a> {
+impl Widget for NetworkInformation {
     fn name(&self) -> &str {
         self.name
     }

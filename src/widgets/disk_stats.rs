@@ -15,19 +15,19 @@ const DISK_THRESHOLD: f64 = 20.0;
 
 #[derive(Serialize)]
 // A struct that holds a Map of all paths that we want to watch over
-pub struct Disk<'a> {
+pub struct Disk {
     // Name of the widget
-    name: &'a str,
+    name: &'static str,
     // Text that will be shown in the status bar
     full_text: Option<String>,
     // Color of the text
-    color: &'a str,
+    color: &'static str,
     // Paths to watch
     #[serde(skip_serializing)]
     path_to_watch: (String, String),
 }
 
-impl<'a> Disk<'a> {
+impl Disk {
     pub fn new(display_name: String, path: String) -> Self {
         Self {
             name: "disk",
@@ -72,7 +72,7 @@ impl<'a> Disk<'a> {
     }
 }
 
-impl<'a> Widget for Disk<'a> {
+impl Widget for Disk {
     fn name(&self) -> &str {
         self.name
     }

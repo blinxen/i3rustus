@@ -23,8 +23,17 @@ impl WidgetExecutor {
     // The widget has a static lifetime because we return a reference to it in `fn widget()`
     // The lifetime has to be static because this widget will live as long as the program (maybe
     // process is the better word?) is running
-    pub fn new(widget: Box<dyn Widget>) -> Self {
-        Self { widget }
+    pub fn new<W>(widget: W) -> Self
+    where
+        W: Widget + 'static,
+    {
+        Self {
+            widget: Box::new(widget),
+        }
+    }
+
+    pub fn widget_name(&self) -> &str {
+        self.widget.name()
     }
 }
 

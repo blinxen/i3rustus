@@ -7,16 +7,16 @@ use crate::widgets::Widget;
 use crate::widgets::WidgetError;
 
 #[derive(Serialize)]
-pub struct Time<'a> {
+pub struct Time {
     // Name of the widget
-    name: &'a str,
+    name: &'static str,
     // Text that will be shown in the status bar
     full_text: Option<String>,
     // Color of the text
-    color: &'a str,
+    color: &'static str,
 }
 
-impl<'a> Time<'a> {
+impl Time {
     pub fn new() -> Self {
         Self {
             name: "time",
@@ -26,7 +26,7 @@ impl<'a> Time<'a> {
     }
 }
 
-impl<'a> Widget for Time<'a> {
+impl Widget for Time {
     fn name(&self) -> &str {
         self.name
     }

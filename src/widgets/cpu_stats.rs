@@ -19,13 +19,13 @@ pub enum CpuUsageType {
 }
 
 #[derive(Serialize)]
-pub struct CpuUsage<'a> {
+pub struct CpuUsage {
     // Name of the widget
-    name: &'a str,
+    name: &'static str,
     // Text that will be shown in the status bar
     full_text: Option<String>,
     // Color of the text
-    color: &'a str,
+    color: &'static str,
     #[serde(skip_serializing)]
     pub usage_type: CpuUsageType,
     // Last idle time of CPU
@@ -39,7 +39,7 @@ pub struct CpuUsage<'a> {
     error: Option<String>,
 }
 
-impl<'a> CpuUsage<'a> {
+impl CpuUsage {
     pub fn new(usage_type: CpuUsageType) -> Self {
         let name = if usage_type == CpuUsageType::CpuLoad {
             "cpu_load"
@@ -91,7 +91,7 @@ impl<'a> CpuUsage<'a> {
     }
 }
 
-impl<'a> Widget for CpuUsage<'a> {
+impl Widget for CpuUsage {
     fn name(&self) -> &str {
         self.name
     }

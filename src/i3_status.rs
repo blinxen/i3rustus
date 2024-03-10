@@ -1,39 +1,53 @@
-use crate::{
-    widget_executor::{UpdateWidgetValue, WidgetExecutor, WidgetValue},
-    widgets::Widget,
-};
+use crate::config::Config;
+use crate::widget_executor::{UpdateWidgetValue, WidgetExecutor, WidgetValue};
+use crate::widgets::battery_life::Battery;
+use crate::widgets::brightness::Brightness;
+use crate::widgets::cpu_stats::CpuUsage;
+use crate::widgets::cpu_stats::CpuUsageType;
+use crate::widgets::disk_stats::Disk;
+use crate::widgets::memory_stats::MemoryUsage;
+use crate::widgets::network_information::NetworkInformation;
+use crate::widgets::network_information::NetworkType;
+use crate::widgets::time::Time;
+
 use actix::{Actor, Addr};
 use serde_json::{json, Value};
 use std::collections::HashMap;
 use std::{thread, time};
 
+pub const CONFIG: Config = Config::new();
+
 pub struct I3Status {
-    widget_order: Vec<String>,
     widget_executors: HashMap<String, Addr<WidgetExecutor>>,
 }
 
 impl I3Status {
-    pub fn new(widget_order: Vec<String>, widgets: Vec<Box<dyn Widget>>) -> Self {
-        let mut executors = HashMap::new();
+    pub fn new() -> Self {
+        let executors = vec![
+            WidgetExecutor::new(NetworkInformation::new(NetworkType::Wlan)),
+            WidgetExecutor::new(NetworkInformation::new(NetworkType::Ethernet)),
+            WidgetExecutor::new(Battery::new()),
+            WidgetExecutor::new(CpuUsage::new(CpuUsageType::CpuLoad)),
+            WidgetExecutor::new(CpuUsage::new(CpuUsageType::Percentage)),
+            WidgetExecutor::new(MemoryUsage::new()),
+            WidgetExecutor::new(Disk::new(String::from("root"), String::from("/"))),
+            WidgetExecutor::new(Time::new()),
+            WidgetExecutor::new(Brightness::new()),
+        ];
 
-        for widget in widgets {
-            // TODO: I don't like the to_string here
-            executors.insert(
-                widget.name().to_string(),
-                WidgetExecutor::new(widget).start(),
-            );
+        let mut widget_executors = HashMap::new();
+
+        for executor in executors {
+            widget_executors.insert(executor.widget_name().to_owned(), executor.start());
         }
 
-        Self {
-            widget_order,
-            widget_executors: executors,
-        }
+        Self { widget_executors }
     }
 
     async fn widget_values(&self) -> Value {
         let mut values = json!([]);
         // Make sure widgets are printed in the correct order
-        for widget_name in self.widget_order.iter() {
+        for widget_name in CONFIG.widget_order().iter() {
             match self
                 .widget_executors
                 .get(widget_name)

@@ -1,3 +1,4 @@
+use crate::i3_status::CONFIG;
 use crate::widgets::{Widget, WidgetError};
 use crate::{config::YELLOW, utils::file::read_first_line_in_file};
 use serde::Serialize;
@@ -6,30 +7,30 @@ use serde_json::Value;
 const BACKLIGHT_PATH: &str = "/sys/class/backlight";
 
 #[derive(Serialize)]
-pub struct Brightness<'a> {
+pub struct Brightness {
     // Name of the widget
-    name: &'a str,
+    name: &'static str,
     // Text that will be shown in the status bar
     full_text: Option<String>,
     // Color of the text
-    color: &'a str,
+    color: &'static str,
     #[serde(skip_serializing)]
     // Device name of the digital display
-    device_name: String,
+    device_name: &'static str,
 }
 
-impl<'a> Brightness<'a> {
-    pub fn new(device_name: String) -> Self {
+impl Brightness {
+    pub fn new() -> Self {
         Self {
             name: "brightness",
             full_text: None,
             color: YELLOW,
-            device_name,
+            device_name: CONFIG.brightness_device_name(),
         }
     }
 }
 
-impl<'a> Widget for Brightness<'a> {
+impl Widget for Brightness {
     fn name(&self) -> &str {
         self.name
     }

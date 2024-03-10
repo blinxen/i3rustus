@@ -1,12 +1,12 @@
 use serde::Serialize;
 use serde_json::Value;
 
+use crate::i3_status::CONFIG;
+use crate::widgets::{Widget, WidgetError};
 use crate::{
     config::{GREEN, NEUTRAL, RED, YELLOW_WARNING},
     utils::file::{read_file, read_first_line_in_file},
 };
-
-use crate::widgets::{Widget, WidgetError};
 use std::io::{BufRead, BufReader, Error};
 
 const BATTERY_PATH: &str = "/sys/class/power_supply";
@@ -14,29 +14,29 @@ const BATTERY_LOWER_THRESHOLD: f32 = 20.0;
 const BATTERY_UPPER_THRESHOLD: f32 = 80.0;
 
 #[derive(Serialize)]
-pub struct Battery<'a> {
+pub struct Battery {
     // Name of the widget
-    name: &'a str,
+    name: &'static str,
     // Text that will be shown in the status bar
     full_text: Option<String>,
     // Color of the text
-    color: &'a str,
+    color: &'static str,
     #[serde(skip_serializing)]
     // Holds the error message if an error occured during widget update
     error: Option<String>,
     #[serde(skip_serializing)]
     // Device name of the power supply
-    device_name: String,
+    device_name: &'static str,
 }
 
-impl<'a> Battery<'a> {
-    pub fn new(device_name: String) -> Self {
+impl Battery {
+    pub fn new() -> Self {
         Self {
             name: "battery",
             full_text: None,
             color: NEUTRAL,
             error: None,
-            device_name,
+            device_name: CONFIG.battery_device_name(),
         }
     }
 
@@ -98,7 +98,7 @@ impl<'a> Battery<'a> {
     }
 }
 
-impl<'a> Widget for Battery<'a> {
+impl Widget for Battery {
     fn name(&self) -> &str {
         self.name
     }

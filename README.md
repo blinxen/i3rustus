@@ -8,6 +8,32 @@ This project is not intended for other people to use.
 It's one of my rust learning projects,
 where I am getting to know rust better.
 
+Configuration
+-------------
+
+The config file is located at `$HOME/config/i3rustus/config`.
+
+Example:
+
+```
+wifi_device_name = wlp3s0
+ethernet_device_name = enp5s0
+battery_device_name = BAT0
+brightness_device_name = amdgpu_bl1
+timezone_file = /etc/timezone
+order = wireless, ethernet, battery, brightness, cpu_load, cpu_percentage, memory, disk, time
+```
+
+Installation
+------------
+
+Fedora:
+
+```
+dnf copr enable blinxen/tools
+dnf install fedtools
+```
+
 License
 -------
 

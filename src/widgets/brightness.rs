@@ -35,28 +35,28 @@ impl Widget for Brightness {
     }
 
     fn update(&mut self) {
-        let actual_brightness = read_first_line_in_file(&format!(
+        let current_brightness = read_first_line_in_file(&format!(
             "{}/{}/actual_brightness",
             BACKLIGHT_PATH, self.device_name
-        ))
-        .unwrap()
-        .parse::<f32>()
-        .unwrap();
+        ));
         let max_brightness = read_first_line_in_file(&format!(
             "{}/{}/max_brightness",
             BACKLIGHT_PATH, self.device_name
-        ))
-        .unwrap()
-        .parse::<f32>()
-        .unwrap();
+        ));
 
-        self.full_text = Some(
-            String::from("☼: ")
-                + &(actual_brightness / max_brightness * 100.0)
-                    .round()
-                    .to_string()
-                + "%",
-        );
+        if let Ok(current_brightness) = current_brightness {
+            if let Ok(max_brightness) = max_brightness {
+                self.full_text = Some(
+                    String::from("☼: ")
+                        + &(current_brightness.parse::<f32>().unwrap()
+                            / max_brightness.parse::<f32>().unwrap()
+                            * 100.0)
+                            .round()
+                            .to_string()
+                        + "%",
+                );
+            }
+        }
     }
 
     fn display_text(&self) -> Result<Value, WidgetError> {

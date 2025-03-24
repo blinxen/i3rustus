@@ -1,7 +1,6 @@
 use serde::Serialize;
 use serde_json::Value;
 
-use crate::i3_status::CONFIG;
 use crate::widgets::{Widget, WidgetError};
 use crate::{
     config::{GREEN, NEUTRAL, RED, YELLOW_WARNING},
@@ -26,17 +25,17 @@ pub struct Battery {
     error: Option<String>,
     #[serde(skip_serializing)]
     // Device name of the power supply
-    device_name: &'static str,
+    device_name: String,
 }
 
 impl Battery {
-    pub fn new() -> Self {
+    pub fn new(device_name: String) -> Self {
         Self {
             name: "battery",
             full_text: None,
             color: NEUTRAL,
             error: None,
-            device_name: CONFIG.battery_device_name(),
+            device_name,
         }
     }
 

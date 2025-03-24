@@ -3,7 +3,6 @@ use serde_json::Value;
 
 use crate::config::GREEN;
 use crate::config::RED;
-use crate::i3_status::CONFIG;
 use crate::netlink::Netlink;
 use crate::widgets::Widget;
 use crate::widgets::WidgetError;
@@ -26,7 +25,7 @@ pub struct NetworkInformation {
     // Color of the text
     color: &'static str,
     // Device name
-    device_name: &'static str,
+    device_name: String,
     #[serde(skip_serializing)]
     network_type: NetworkType,
     #[serde(skip_serializing)]
@@ -39,7 +38,7 @@ pub struct NetworkInformation {
 }
 
 impl NetworkInformation {
-    pub fn new(network_type: NetworkType) -> Self {
+    pub fn new(network_type: NetworkType, device_name: String) -> Self {
         let name = if network_type == NetworkType::Wlan {
             "wireless"
         } else {
@@ -50,12 +49,6 @@ impl NetworkInformation {
             WIFI_DEFAULT
         } else {
             ETH_DEFAULT
-        };
-
-        let device_name = if network_type == NetworkType::Wlan {
-            CONFIG.get_wifi_device_name()
-        } else {
-            CONFIG.get_ethernet_device_name()
         };
 
         Self {
@@ -72,8 +65,8 @@ impl NetworkInformation {
 
     fn get_ethernet_information(&self) -> Result<String, WidgetError> {
         if let Ok(netlink) = self.netlink.as_ref() {
-            let ip = netlink.interface_ip(self.device_name)?;
-            let bitrate = netlink.interface_bitrate(self.device_name)?;
+            let ip = netlink.interface_ip(&self.device_name)?;
+            let bitrate = netlink.interface_bitrate(&self.device_name)?;
             if ip.is_empty() {
                 Ok(self.default_full_text.to_string())
             } else {
@@ -89,9 +82,9 @@ impl NetworkInformation {
 
     fn get_wlan_information(&self) -> Result<String, WidgetError> {
         if let Ok(netlink) = self.netlink.as_ref() {
-            let bss = netlink.interface_bss_information(self.device_name)?;
-            let ip = netlink.interface_ip(self.device_name)?;
-            let bitrate = netlink.interface_bitrate(self.device_name)?;
+            let bss = netlink.interface_bss_information(&self.device_name)?;
+            let ip = netlink.interface_ip(&self.device_name)?;
+            let bitrate = netlink.interface_bitrate(&self.device_name)?;
             if bss.ssid.is_empty() && ip.is_empty() {
                 Ok(self.default_full_text.to_string())
             } else {

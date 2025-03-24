@@ -15,39 +15,24 @@ use serde_json::{json, Value};
 use std::collections::HashMap;
 use std::{thread, time};
 
-pub const CONFIG: Config = Config::new();
-
 pub struct I3Status {
     widget_executors: HashMap<String, Addr<WidgetExecutor>>,
+    config: Config,
 }
 
 impl I3Status {
     pub fn new() -> Self {
-        let executors = vec![
-            WidgetExecutor::new(NetworkInformation::new(NetworkType::Wlan)),
-            WidgetExecutor::new(NetworkInformation::new(NetworkType::Ethernet)),
-            WidgetExecutor::new(Battery::new()),
-            WidgetExecutor::new(CpuUsage::new(CpuUsageType::CpuLoad)),
-            WidgetExecutor::new(CpuUsage::new(CpuUsageType::Percentage)),
-            WidgetExecutor::new(MemoryUsage::new()),
-            WidgetExecutor::new(Disk::new(String::from("root"), String::from("/"))),
-            WidgetExecutor::new(Time::new()),
-            WidgetExecutor::new(Brightness::new()),
-        ];
-
-        let mut widget_executors = HashMap::new();
-
-        for executor in executors {
-            widget_executors.insert(executor.widget_name().to_owned(), executor.start());
+        let config = Config::init();
+        Self {
+            widget_executors: HashMap::new(),
+            config,
         }
-
-        Self { widget_executors }
     }
 
     async fn widget_values(&self) -> Value {
         let mut values = json!([]);
         // Make sure widgets are printed in the correct order
-        for widget_name in CONFIG.widget_order().iter() {
+        for widget_name in self.config.widget_order.iter() {
             if self.widget_executors.contains_key(widget_name) {
                 match self.widget_executors[widget_name]
                     .send(WidgetValue {})
@@ -75,6 +60,32 @@ impl I3Status {
         values
     }
 
+    fn init_widgets(&mut self) {
+        // Initialize widgets
+        let executors = vec![
+            WidgetExecutor::new(NetworkInformation::new(
+                NetworkType::Wlan,
+                self.config.wifi_device_name.clone(),
+            )),
+            WidgetExecutor::new(NetworkInformation::new(
+                NetworkType::Ethernet,
+                self.config.ethernet_device_name.clone(),
+            )),
+            WidgetExecutor::new(Battery::new(self.config.battery_device_name.clone())),
+            WidgetExecutor::new(CpuUsage::new(CpuUsageType::CpuLoad)),
+            WidgetExecutor::new(CpuUsage::new(CpuUsageType::Percentage)),
+            WidgetExecutor::new(MemoryUsage::new()),
+            WidgetExecutor::new(Disk::new(String::from("root"), String::from("/"))),
+            WidgetExecutor::new(Time::new(self.config.timezone_file.clone())),
+            WidgetExecutor::new(Brightness::new(self.config.brightness_device_name.clone())),
+        ];
+
+        for executor in executors {
+            self.widget_executors
+                .insert(executor.widget_name().to_owned(), executor.start());
+        }
+    }
+
     fn update_widgets(&self) {
         // Send update message to all executors
         // This will start a "update" job
@@ -84,6 +95,7 @@ impl I3Status {
     }
 
     pub async fn init(&mut self) {
+        self.init_widgets();
         // Make sure all widgets contain a valid value before starting the actual loop
         self.update_widgets();
         // This is the output that is read by i3

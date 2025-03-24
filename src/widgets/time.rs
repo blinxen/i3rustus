@@ -4,7 +4,6 @@ use std::path::Path;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::config::NEUTRAL;
-use crate::i3_status::CONFIG;
 use crate::widgets::Widget;
 use crate::widgets::WidgetError;
 
@@ -25,22 +24,22 @@ pub struct Time {
 }
 
 impl Time {
-    pub fn new() -> Self {
+    pub fn new(timezone_file: String) -> Self {
         Self {
             name: "time",
             full_text: String::new(),
             color: NEUTRAL,
-            tz_offset: Self::timezone_offset().unwrap_or(0),
+            tz_offset: Self::timezone_offset(timezone_file).unwrap_or(0),
         }
     }
 
-    fn timezone_offset() -> Option<i64> {
+    fn timezone_offset(tz_file: String) -> Option<i64> {
         let mut offset = 0;
         let now = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap()
             .as_secs() as i64;
-        let tz_data = tzif::parse_tzif_file(Path::new(CONFIG.timezone())).ok()?;
+        let tz_data = tzif::parse_tzif_file(Path::new(&tz_file)).ok()?;
         let (transition_times, local_time_types, transition_types) =
             if let Some(data) = tz_data.data_block2 {
                 (

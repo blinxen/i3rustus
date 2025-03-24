@@ -1,4 +1,3 @@
-use crate::i3_status::CONFIG;
 use crate::widgets::{Widget, WidgetError};
 use crate::{config::YELLOW, utils::file::read_first_line_in_file};
 use serde::Serialize;
@@ -16,16 +15,16 @@ pub struct Brightness {
     color: &'static str,
     #[serde(skip_serializing)]
     // Device name of the digital display
-    device_name: &'static str,
+    device_name: String,
 }
 
 impl Brightness {
-    pub fn new() -> Self {
+    pub fn new(device_name: String) -> Self {
         Self {
             name: "brightness",
             full_text: None,
             color: YELLOW,
-            device_name: CONFIG.brightness_device_name(),
+            device_name,
         }
     }
 }

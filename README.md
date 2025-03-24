@@ -16,12 +16,12 @@ The config file is located at `$HOME/config/i3rustus/config`.
 Example:
 
 ```
-wifi_device_name = wlp3s0
+wlan_device_name = wlp3s0
 ethernet_device_name = enp5s0
 battery_device_name = BAT0
 brightness_device_name = amdgpu_bl1
 timezone_file = /etc/timezone
-order = wireless, ethernet, battery, brightness, cpu_load, cpu_percentage, memory, disk, time
+order = wlan, ethernet, battery, brightness, cpu_load, cpu_percentage, memory, disk, time
 ```
 
 Installation

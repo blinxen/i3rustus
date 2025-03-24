@@ -65,7 +65,7 @@ impl I3Status {
         let executors = vec![
             WidgetExecutor::new(NetworkInformation::new(
                 NetworkType::Wlan,
-                self.config.wifi_device_name.clone(),
+                self.config.wlan_device_name.clone(),
             )),
             WidgetExecutor::new(NetworkInformation::new(
                 NetworkType::Ethernet,

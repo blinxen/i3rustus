@@ -7,9 +7,6 @@ use crate::netlink::Netlink;
 use crate::widgets::Widget;
 use crate::widgets::WidgetError;
 
-static ETH_DEFAULT: &str = "E: down";
-static WIFI_DEFAULT: &str = "W: down";
-
 #[derive(PartialEq, Eq)]
 pub enum NetworkType {
     Ethernet,
@@ -40,15 +37,15 @@ pub struct NetworkInformation {
 impl NetworkInformation {
     pub fn new(network_type: NetworkType, device_name: String) -> Self {
         let name = if network_type == NetworkType::Wlan {
-            "wireless"
+            "wlan"
         } else {
             "ethernet"
         };
 
         let default_full_text = if network_type == NetworkType::Wlan {
-            WIFI_DEFAULT
+            "W: down"
         } else {
-            ETH_DEFAULT
+            "E: down"
         };
 
         Self {

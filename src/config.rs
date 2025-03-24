@@ -8,7 +8,7 @@ pub(crate) const NEUTRAL: &str = "#FFFFFF";
 
 #[derive(Debug)]
 pub struct Config {
-    pub wifi_device_name: String,
+    pub wlan_device_name: String,
     pub ethernet_device_name: String,
     pub battery_device_name: String,
     pub brightness_device_name: String,
@@ -19,7 +19,7 @@ pub struct Config {
 impl Config {
     pub fn init() -> Self {
         let mut config = Config {
-            wifi_device_name: String::new(),
+            wlan_device_name: String::new(),
             ethernet_device_name: String::new(),
             battery_device_name: String::new(),
             brightness_device_name: String::new(),
@@ -34,8 +34,8 @@ impl Config {
                     let left = split.next().map(str::trim);
                     let right = split.next().map(str::trim);
                     match left {
-                        Some("wifi_device_name") => {
-                            config.wifi_device_name = String::from(right.unwrap_or(""))
+                        Some("wlan_device_name") => {
+                            config.wlan_device_name = String::from(right.unwrap_or(""))
                         }
                         Some("ethernet_device_name") => {
                             config.ethernet_device_name = String::from(right.unwrap_or(""))

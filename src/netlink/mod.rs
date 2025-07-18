@@ -177,7 +177,7 @@ impl Netlink {
                 };
                 // In a single response, there could be multiple netlink message headers
                 loop {
-                    // Break out of loop if we have finished reading all bytebytes
+                    // Break out of loop if we have finished reading all bytes
                     if bytes_read == response_size as u32 {
                         break;
                     }
@@ -196,7 +196,7 @@ impl Netlink {
                     result_buffer.push(header);
                 }
                 if let Some(last_header) = result_buffer.last() {
-                    // Error + error code 0 is the ACK messag
+                    // Error + error code 0 is the ACK message
                     if last_header.message_type as i32 == NLMSG_DONE
                         || (last_header.message_type as i32 == NLMSG_ERROR)
                             && last_header.payload == Payload::Error(0)

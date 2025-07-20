@@ -2,7 +2,7 @@
 %bcond_with check
 
 Name:           i3rustus
-Version:        0.5.0
+Version:        0.5.1
 Release:        1%{?dist}
 Summary:        Lightweight implementation of i3status in rust
 # Apache-2.0 OR BSL-1.0
@@ -45,6 +45,8 @@ Lightweight implementation of i3status in rust
 %endif
 
 %changelog
+* Sun Jul 20 2025 blinxen <h-k-81@hotmail.com> - 0.5.1-1
+- Update to version 0.5.1
 * Mon Mar 24 2025 blinxen <h-k-81@hotmail.com> - 0.5.0-1
 - Don't panic if brightness device could not be found
 - Load config from file

@@ -58,6 +58,10 @@ impl CpuUsage {
         }
     }
 
+    fn get_cpu_count(&self) -> usize {
+        walkdir::WalkDir::new("/dev/cpu").max_depth(1).into_iter().count() - 1
+    }
+
     fn get_cpu_load(&self) -> Result<String, WidgetError> {
         let load_avg = read_first_line_in_file("/proc/loadavg")?;
         // We only want the the load and not the
@@ -109,7 +113,7 @@ impl Widget for CpuUsage {
         } else {
             match self.get_cpu_usage() {
                 Ok(usage) => {
-                    self.full_text = Some(format!("CPU:{:.0}%", usage));
+                    self.full_text = Some(format!("CPU ({}):{:.0}%", self.get_cpu_count(), usage));
                     self.color = if usage > CPU_USAGE_THRESHOLD {
                         RED
                     } else {

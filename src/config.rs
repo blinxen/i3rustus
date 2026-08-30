@@ -1,5 +1,3 @@
-use std::path::PathBuf;
-
 pub(crate) const GREEN: &str = "#08FF00";
 pub(crate) const RED: &str = "#FF0000";
 pub(crate) const YELLOW_WARNING: &str = "#FED037";
@@ -27,7 +25,7 @@ impl Config {
             widget_order: Vec::new(),
         };
 
-        if let Some(home) = std::env::var_os("HOME").map(PathBuf::from) {
+        if let Some(home) = std::env::home_dir() {
             if let Ok(config_file) = std::fs::read_to_string(home.join(".config/i3rustus/config")) {
                 for line in config_file.lines() {
                     let mut split = line.split('=');
